@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1A1612">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dietaries">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Yūgen Dietaries</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: a service pass. Dark menu-card header, three tabs, verdict tiles that jump to their group, dishes as accordions with "where / why / ask chef" */
+:root{
+  --bg:#F3EEE4; --card:#FFFDF8; --card2:#F8F3EA; --ink:#1A1612; --mute:#6E665B; --line:#E3DACB;
+  --head:#1A1612; --headInk:#F3EEE4; --headMute:#B7AC9B;
+  --accent:#D9330F; --accentSoft:#FBE3DB; --hl:#FFE08A;
+  --ok:#1F7A4A; --okBg:#DDF1E5; --prob:#4E7A2A; --probBg:#EAF2DC;
+  --mod:#A86300; --modBg:#FBEBD0; --no:#B3261E; --noBg:#F8DCD9; --ask:#5B4BB7; --askBg:#E6E2F8;
+  --display:"Anton","Impact","Arial Narrow",sans-serif;
+  --body:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Space Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12100D; --card:#1C1915; --card2:#221E19; --ink:#F2ECE1; --mute:#A39A8C; --line:#332E27;
+  --head:#26201A; --headInk:#F2ECE1; --headMute:#A39A8C;
+  --accent:#FF6A45; --accentSoft:#3A1F17; --hl:#6B5418;
+  --ok:#6FD39C; --okBg:#173326; --prob:#A8D27A; --probBg:#253019;
+  --mod:#F2B24C; --modBg:#382A12; --no:#FF8A80; --noBg:#3A1A18; --ask:#B4A8FF; --askBg:#25213D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12100D; --card:#1C1915; --card2:#221E19; --ink:#F2ECE1; --mute:#A39A8C; --line:#332E27;
+  --head:#26201A; --headInk:#F2ECE1; --headMute:#A39A8C;
+  --accent:#FF6A45; --accentSoft:#3A1F17; --hl:#6B5418;
+  --ok:#6FD39C; --okBg:#173326; --prob:#A8D27A; --probBg:#253019;
+  --mod:#F2B24C; --modBg:#382A12; --no:#FF8A80; --noBg:#3A1A18; --ask:#B4A8FF; --askBg:#25213D; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 56px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.head{background:var(--head);color:var(--headInk);border-radius:18px;padding:18px 18px 16px;position:relative;overflow:hidden}
+.head::after{content:"幽玄";position:absolute;right:-6px;bottom:-22px;font-size:96px;line-height:1;color:var(--headInk);opacity:.07;font-family:serif;pointer-events:none}
+.head .eyebrow{color:var(--headMute)}
+.head h1{font-family:var(--display);font-weight:400;font-size:clamp(34px,9vw,50px);letter-spacing:.01em;margin:4px 0 0;line-height:.95}
+.head h1 span{color:var(--accent)}
+.head p{margin:8px 0 0;color:var(--headMute);font-size:14px;max-width:46ch}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.warn{background:var(--accentSoft);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.warn b{color:var(--accent)}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:0 6px 16px -12px rgba(0,0,0,.35)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.tabs button{font:inherit;font-weight:700;font-size:14px;padding:10px 4px;border:none;border-radius:10px;background:none;color:var(--ink);cursor:pointer;line-height:1.15}
+.tabs button[aria-selected="true"]{background:var(--accent);color:#fff}
+.tabs .cnt{display:inline-block;font-family:var(--mono);font-size:10.5px;background:var(--askBg);color:var(--ask);border-radius:999px;padding:0 6px;margin-left:4px}
+.tabs button[aria-selected="true"] .cnt{background:rgba(255,255,255,.25);color:#fff}
+.panel{display:flex;flex-direction:column;gap:16px}
+.block{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.bh{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.bh h2{margin:0;font-size:16px;display:flex;align-items:center;gap:8px}
+.num{font-family:var(--display);font-weight:400;font-size:15px;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--bg);display:inline-grid;place-items:center;flex:none}
+.sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font:inherit;font-size:14px;border:1.5px solid var(--line);background:var(--card2);color:var(--ink);border-radius:999px;padding:7px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.sm{font-size:13px;padding:5px 10px}
+:is(.chip,.btn,.tile,.tabs button,.seg button,summary,.add,.copy):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{font:inherit;font-size:13px;background:none;border:none;color:var(--accent);cursor:pointer;padding:4px 0;text-decoration:underline}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.seg button{flex:1;font:inherit;font-size:13.5px;padding:9px 4px;border:none;background:none;color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+input[type=search],textarea{font:inherit;width:100%;border:1.5px solid var(--line);border-radius:12px;background:var(--card2);color:var(--ink)}
+input[type=search]{font-size:17px;padding:12px 14px}
+textarea{font-size:14px;padding:9px 11px;min-height:44px;resize:vertical}
+input[type=search]:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.hint{font-size:13px;color:var(--mute)}
+.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.tile{font:inherit;border:none;border-radius:14px;padding:10px 4px 8px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;transition:transform .12s}
+.tile:active{transform:scale(.96)}
+.tile:disabled{opacity:.35;cursor:default}
+.tile i{font-style:normal;font-size:15px;font-weight:700;line-height:1}
+.tile b{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.05;font-variant-numeric:tabular-nums}
+.tile span{font-size:11px;line-height:1.15;font-weight:500}
+.s-ok{background:var(--okBg);color:var(--ok)} .s-prob{background:var(--probBg);color:var(--prob)}
+.s-mod{background:var(--modBg);color:var(--mod)} .s-no{background:var(--noBg);color:var(--no)} .s-ask{background:var(--askBg);color:var(--ask)}
+.combo{font-size:13.5px;margin-bottom:8px;line-height:1.6}
+.combo b{background:var(--ink);color:var(--bg);border-radius:6px;padding:1px 7px;font-weight:500;white-space:nowrap}
+.combo span{color:var(--mute)}
+.irow{display:flex;gap:8px}
+.irow input{flex:1;min-width:0}
+.addi{font:inherit;font-weight:700;font-size:15px;border:none;border-radius:12px;padding:0 16px;background:var(--accent);color:#fff;cursor:pointer}
+.tag{font:inherit;font-size:14px;border:none;border-radius:999px;padding:6px 8px 6px 12px;background:var(--ink);color:var(--bg);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.tag span{opacity:.6;font-size:16px;line-height:1}
+.tag.pending{background:none;color:var(--ink);border:1.5px dashed var(--line)}
+.found{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;border-radius:5px;padding:1px 6px;margin:3px 4px 0 0;background:var(--noBg);color:var(--no)}
+.needsum{list-style:none;cursor:pointer;display:flex;gap:8px;align-items:center}
+.needsum::-webkit-details-marker{display:none}
+.needsum b{font-size:16px;flex:1;min-width:0}
+.needin{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.menu-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 14px 8px;display:flex;flex-direction:column;gap:22px}
+.mtop{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.mcount{display:flex;gap:6px;flex-wrap:wrap}
+.mcount span{font-family:var(--mono);font-size:11.5px;font-weight:700;border-radius:7px;padding:3px 8px}
+.toggle{font:inherit;font-size:13px;border:1.5px solid var(--line);background:var(--card2);color:var(--ink);border-radius:999px;padding:5px 11px;cursor:pointer}
+.toggle[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.msec{display:grid;grid-template-columns:22px 1fr;gap:12px}
+.mlabel{writing-mode:vertical-rl;font-family:var(--body);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:500;white-space:nowrap}
+.mitems{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mfoot{font-style:italic;font-size:13.5px;color:var(--mute);padding:2px 0 4px}
+.mi>summary{list-style:none;cursor:pointer;padding:7px 0;display:flex;flex-direction:column;gap:2px}
+.mi>summary::-webkit-details-marker{display:none}
+.mi[open]>summary{padding-bottom:9px}
+.mrow{display:flex;gap:10px;align-items:baseline}
+.mname{flex:1;min-width:0;font-weight:700;font-size:15px}
+.orig{font-weight:400;color:var(--mute);font-size:13px}
+.mprice{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mdesc{font-style:italic;font-size:13.5px;color:var(--mute)}
+.mtags{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
+.mt{font-size:11.5px;font-weight:500;border-radius:6px;padding:2px 7px;line-height:1.3}
+.mt.no{background:var(--noBg);color:var(--no)} .mt.mod{background:var(--modBg);color:var(--mod)} .mt.ask{background:var(--askBg);color:var(--ask)}
+.mt.fam{background:var(--modBg);color:var(--mod);border:1px dashed var(--mod)} .mt.diff{background:var(--card2);color:var(--mute);border:1px solid var(--line)}
+.okdot{color:var(--ok);margin-right:4px}
+.mi.st-N .mname{text-decoration:line-through;text-decoration-color:var(--no);text-decoration-thickness:2px;color:var(--mute)}
+.mi.st-N .mdesc,.mi.st-N .mprice,.mi.st-N .orig{opacity:.45}
+.mi .body{border-radius:12px;margin-bottom:8px}
+.mnote{font-size:12.5px;color:var(--mute);padding:4px 0 10px}
+.adapt{background:var(--modBg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.ah{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:500}
+.atype{align-self:flex-start;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.05em;background:var(--mod);color:var(--card);border-radius:6px;padding:2px 7px}
+.adapt .where .k{color:var(--mod)}
+.dk{font-family:var(--mono);font-size:12px;font-weight:700;background:var(--card);border:1px dashed var(--mod);border-radius:6px;padding:2px 7px;display:inline-block}
+.adapt .askq{background:var(--card)}
+.mad{flex-basis:100%;background:var(--modBg);border-left:3px solid var(--mod);border-radius:0 8px 8px 0;padding:6px 9px;display:flex;flex-direction:column;gap:2px;font-size:12.5px}
+.mad b{color:var(--mod);font-weight:700;font-size:12.5px}
+.mad span{color:var(--ink)}
+.mad .mdk{font-family:var(--mono);font-size:10.5px;color:var(--mod);margin-top:1px}
+.mad .mconf{font-size:11px;color:var(--ask);font-weight:700}
+.cl{flex-basis:100%;font-size:12.5px;font-weight:500;line-height:1.35}
+.cl.no{color:var(--no)} .cl.mod{color:var(--mod)}
+.cl i{font-style:normal;font-family:var(--mono);font-size:10px;font-weight:700;border-radius:5px;padding:1px 5px;margin-left:3px;background:var(--card2);color:var(--mute);white-space:nowrap}
+.cl i.q2{background:var(--askBg);color:var(--ask)}
+.wdish{padding:10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.witem{display:flex;gap:10px;align-items:center}
+.wt{flex:1;min-width:0;font-size:14px}
+.wt small{display:block;color:var(--mute);font-size:12px}
+.yn{display:flex;gap:4px;flex:none}
+.ynb{font:inherit;font-size:13px;font-weight:700;border:1.5px solid var(--line);background:var(--card2);color:var(--ink);border-radius:9px;padding:6px 11px;cursor:pointer}
+.ynb.on-y{background:var(--ok);border-color:var(--ok);color:var(--card)}
+.ynb.on-n{background:var(--no);border-color:var(--no);color:var(--card)}
+.ynb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tapnote{font-size:12px;color:var(--mute);text-align:center;margin-top:-4px}
+.group{border-radius:16px;background:var(--card);border:1px solid var(--line);overflow:hidden;scroll-margin-top:80px}
+.group>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;gap:10px;align-items:center}
+.group>summary::-webkit-details-marker{display:none}
+.gsym{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:700;flex:none}
+.gt{flex:1;min-width:0}
+.gt b{font-size:16px}
+.gt small{display:block;color:var(--mute);font-size:12.5px}
+.gn{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.chev{transition:transform .2s;color:var(--mute);font-size:18px}
+details[open]>summary .chev{transform:rotate(90deg)}
+.flash{animation:fl 1.1s ease-out}
+@keyframes fl{0%{box-shadow:0 0 0 4px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
+.dish{border-top:1px solid var(--line)}
+.dish>summary{list-style:none;cursor:pointer;padding:11px 14px;display:flex;gap:10px;align-items:flex-start}
+.dish>summary::-webkit-details-marker{display:none}
+.dn{flex:1;min-width:0}
+.dn b{font-weight:700;font-size:15px}
+.course{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-top:3px}
+.why1{font-size:13px;color:var(--mute);margin-top:3px}
+.body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;background:var(--card2)}
+.dr{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.dr:last-of-type{border-bottom:none}
+.drh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{flex:none;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.04em;border-radius:6px;padding:2px 7px}
+.drh b{font-size:14px}
+.drn{font-size:13.5px}
+.where{font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:3px 8px;align-items:baseline}
+.where .k{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.where div{min-width:0}
+.whyt{color:var(--mute)}
+.askq{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;background:var(--askBg);color:var(--ink);border-radius:10px;padding:7px 10px}
+.askq q{flex:1;min-width:0;quotes:none;font-style:italic}
+.add{font:inherit;font-size:12.5px;font-weight:700;border:none;border-radius:999px;padding:5px 10px;background:var(--ask);color:#fff;cursor:pointer}
+.add[disabled]{background:none;color:var(--ask);cursor:default;padding:5px 0}
+.dish-desc{font-size:13px;color:var(--mute);border-left:3px solid var(--line);padding-left:10px;display:flex;flex-direction:column;gap:3px}
+.dish-desc b{color:var(--ink);font-weight:500}
+mark{background:var(--hl);color:var(--ink);border-radius:3px;padding:0 2px}
+.hit{font-size:13px;margin-top:4px;color:var(--mute)}
+.empty{color:var(--mute);font-size:14px;padding:16px;text-align:center;background:var(--card);border-radius:14px;border:1px dashed var(--line)}
+.legend{font-size:13px;color:var(--mute)}
+.legend summary{cursor:pointer;color:var(--ink);font-weight:500}
+.legend ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.q{display:flex;flex-direction:column;gap:7px;padding:12px 0;border-top:1px solid var(--line)}
+.q:first-child{border-top:none;padding-top:2px}
+.qh{display:flex;gap:8px;align-items:flex-start}
+.qn{font-family:var(--mono);font-size:11px;color:var(--mute);min-width:22px;padding-top:2px}
+.qt{flex:1;min-width:0;font-size:14.5px}
+.qt small{display:block;color:var(--mute);font-size:12.5px;margin-top:2px}
+.qd{font-size:12px;font-weight:700;color:var(--ask)}
+.q.done .qt{color:var(--mute)}
+.state{font-family:var(--mono);font-size:10px;font-weight:700;border-radius:6px;padding:2px 6px;flex:none}
+.prog{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.prog div{height:100%;background:var(--ok);border-radius:99px;transition:width .3s}
+.copy{font:inherit;font-weight:700;font-size:14px;border:none;border-radius:12px;padding:11px;background:var(--ink);color:var(--bg);cursor:pointer}
+.rm{font:inherit;font-size:12px;background:none;border:none;color:var(--mute);cursor:pointer;text-decoration:underline;padding:0}
+@media (max-width:480px){.tiles{gap:4px}.tile b{font-size:23px}.tile span{font-size:9.5px}.tabs button{font-size:12.5px}}
+@media (prefers-reduced-motion:reduce){.chev,.tile,.prog div{transition:none}.flash{animation:none}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <div class="eyebrow">Food Notes 2026 · 41 dishes</div>
+    <h1>Yūgen <span>Dietaries</span></h1>
+    <p>Pick the table's needs or type an ingredient. Every “no” tells you where it is, why it's there, and what to ask the chef.</p>
+  </header>
+
+  <div class="warn"><b>Real allergy? Always confirm with the kitchen.</b> Built from the Food Notes. Recipes change, and the notes say nothing about cross-contact (shared fryer, shared grill).</div>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" id="t-menu" aria-selected="false">Menu</button>
+    <button type="button" role="tab" id="t-diet" aria-selected="true">Dietary</button>
+    <button type="button" role="tab" id="t-ing" aria-selected="false">Ingredient</button>
+    <button type="button" role="tab" id="t-chef" aria-selected="false">Chef list<span class="cnt" id="qcount">0</span></button>
+  </nav>
+
+  <div class="seg" id="seg">
+    <button type="button" data-m="all" aria-pressed="true">All menus</button>
+    <button type="button" data-m="alc" aria-pressed="false">À la carte</button>
+    <button type="button" data-m="chef" aria-pressed="false">Chef's Experience</button>
+  </div>
+
+  <!-- TAB 1 -->
+  <section class="block" id="needs">
+    <details id="needsBox" open>
+      <summary class="needsum"><span class="num">1</span><b>What does the table need?</b><span class="hint" id="needcount"></span><span class="chev">›</span></summary>
+      <div class="needin">
+        <div class="sub">Allergies &amp; intolerances</div><div class="chips" id="chips"></div>
+        <div class="sub">Diets &amp; lifestyles</div><div class="chips" id="chips2"></div>
+        <button class="btn" id="reset" type="button" style="align-self:flex-start">Clear all</button>
+      </div>
+    </details>
+    <div id="avoidRow" class="hint" hidden></div>
+  </section>
+
+  <!-- TAB MENU -->
+  <div id="p-menu" class="panel" hidden>
+    <div id="out4"></div>
+  </div>
+
+  <div id="p-diet" class="panel">
+    <section class="panel" style="gap:10px">
+      <div class="bh"><h2><span class="num">2</span>The verdict</h2></div>
+      <div id="out"></div>
+    </section>
+    <details class="legend block">
+      <summary>How to read the colours and the diets</summary>
+      <ul>
+        <li><b style="color:var(--ok)">✓ Stated</b>: the Food Notes say it explicitly.</li>
+        <li><b style="color:var(--prob)">✓ Confirm</b>: no conflicting ingredient in the notes, but they don't declare it. Fine for a preference; for an allergy, ask.</li>
+        <li><b style="color:var(--mod)">↺ Adapt</b>: the notes say the kitchen can remove or swap it. Write it on the docket.</li>
+        <li><b style="color:var(--ask)">? Ask</b>: the notes are unclear or contradict themselves. These questions are already on the Chef list.</li>
+        <li><b style="color:var(--no)">✕ No</b>: it contains the ingredient and the notes don't say it can come off. You can still add “can it be done without?” to the Chef list.</li>
+      </ul>
+      <p><b>Diets in one line.</b> Pescatarian: no meat, fish ok. Buddhist vegetarian: no meat and no onion/garlic. Jain: no meat, egg, onion/garlic, honey; strict Jains also avoid root vegetables. Kosher-style: no pork, shellfish or meat with dairy; the kitchen is not certified. Coeliac: a medical condition, even a crumb counts, so always ask about shared fryers.</p>
+      <p>With several needs at once, a dish takes its worst verdict, because one wrong ingredient is enough to make it unservable.</p>
+    </details>
+  </div>
+
+  <!-- TAB 2 -->
+  <div id="p-ing" class="panel" hidden>
+    <section class="block">
+      <div class="bh"><h2><span class="num">1</span>Add one or more ingredients</h2><button class="btn" id="iclear" type="button">Clear</button></div>
+      <form id="iform" class="irow"><input type="search" id="q" placeholder="e.g. coriander, then tap Add" autocomplete="off" autocapitalize="off"><button type="submit" class="addi">Add</button></form>
+      <div class="chips" id="tags"></div>
+      <div class="hint">Common ones (tap to add):</div>
+      <div class="chips" id="quick"></div>
+      <div class="sub" style="margin-top:4px">What are you looking for?</div>
+      <div class="seg" id="imode">
+        <button type="button" data-i="avoid" aria-pressed="true">Guest avoids these</button>
+        <button type="button" data-i="all" aria-pressed="false">Has all of them</button>
+      </div>
+    </section>
+    <section class="panel" style="gap:10px">
+      <div class="bh"><h2><span class="num">2</span>Result</h2></div>
+      <div id="out2"></div>
+    </section>
+  </div>
+
+  <!-- TAB 3 -->
+  <div id="p-chef" class="panel" hidden>
+    <section class="block">
+      <div class="bh"><h2>Questions for the chef</h2><span class="hint" id="qprogtxt"></span></div>
+      <div class="prog"><div id="qprog" style="width:0"></div></div>
+      <div class="hint">Every “Ask” in the notes is here, plus anything you add from a “No”. Write the chef's answer under each one. When you're done, tap <b>Copy all answers</b> and paste them to Claude: the app gets updated and the “Ask” turns into a real verdict.</div>
+      <button type="button" class="copy" id="copy">Copy all answers</button>
+      <div class="hint" id="copied" hidden></div>
+    </section>
+    <div id="out3" class="panel" style="gap:12px"></div>
+  </div>
+</div>
+
+<script>
+const DIET=[
+ ["gf","Gluten free"],["df","Dairy free"],["egg","Egg free"],["nut","Nut free"],
+ ["shell","Shellfish free"],["fish","Fish free"],["sesame","Sesame free"],["soy","Soy free"],
+ ["onion","No onion"],["garlic","No garlic"],["chilli","No chilli"],["coeliac","Coeliac"]];
+const DIET2=[
+ ["veg","Vegetarian"],["vegan","Vegan"],["pesc","Pescatarian"],["lacto","Vegetarian, no egg"],
+ ["buddhist","Buddhist vegetarian"],["jain","Jain"],["halal","Halal"],["kosher","Kosher-style"],
+ ["pork","No pork"],["beef","No beef"],["preg","Pregnant"]];
+const ALL=[...DIET,...DIET2];
+const LBL=Object.fromEntries(ALL);LBL.allium="No onion / garlic";
+// status: O stated · P to confirm · M can adapt · N no · A ask
+// D = [menu, course, name, spiel, ingredients (full Food Notes components), {dietary:"STATUS:note"}]
+const D=[
+// ---------- STARTERS ----------
+["alc","Starter","Seasonal Sashimi Platter (20pc)","Tuna, kingfish, salmon, Hokkaido scallop with onion ponzu & shichimi, snapper with shiso dressing.",
+ "lean tuna, salmon, kingfish · Hokkaido scallop, onion ponzu, shichimi · marinated snapper, shiso (aojiso) dressing (soy infused with shiso and seafood, lime juice, grapeseed oil), sesame, shio kombu, chive · wasabi, ponzu (soy sauce, vinegar, citrus juice, sugar, mirin), dark soy sauce, fresh daikon · shichimi = toasted sesame, black sesame, orange peel, white poppy seeds, paprika, Chinese chiles, Szechwan peppercorns, ginger, toasted seaweed",{
+ gf:"A:ponzu, dark soy and aojiso are soy based: ask if GF",soy:"N:ponzu, dark soy, aojiso dressing",fish:"N:raw fish",shell:"N:scallops; aojiso dressing is made with seafood",
+ sesame:"N:sesame on the snapper and in the shichimi",chilli:"N:shichimi on the scallops",allium:"N:onion ponzu and chives",
+ veg:"N:fish",vegan:"N:fish",preg:"N:raw fish and scallops",halal:"A:ponzu contains mirin (alcohol)"}],
+["alc","Starter","Freshly Shucked Oyster, yuzu kosho mignonette","Oyster dressed with yuzu kosho mignonette. Origin changes daily.",
+ "oysters freshly shucked on ice · mignonette: shallot, vinegar, yuzu, oil, chili kosho",{
+ shell:"N:oyster is a mollusc",allium:"M:shallot in the mignonette: serve natural",chilli:"M:chili kosho in the mignonette: serve natural",
+ veg:"N:mollusc",vegan:"N:mollusc",preg:"N:raw seafood",halal:"P:"}],
+["alc","Starter","Big eye tuna tartare","Tuna tartare with bonito cream, green apple ponzu and crispy seaweed.",
+ "diced tuna, lemon juice, sesame seed, salt, sesame oil, chilli oil · bonito cream: bonito flake, milk, salt, agar agar · apple ponzu: ginger, green apple, rice vinegar, sugar, salt, GF soy, bonito flake, lemon juice · compressed apple · crispy fried seaweed",{
+ gf:"O:",nut:"O:",shell:"O:",allium:"O:",halal:"O:",
+ df:"M:bonito cream has milk: remove it",chilli:"M:chilli oil: remove it",
+ fish:"N:tuna and bonito",sesame:"N:sesame seed and oil",soy:"N:GF soy in the ponzu",
+ veg:"N:fish",vegan:"N:fish",preg:"N:raw tuna"}],
+["alc","Starter","Caviar service","Antonius caviar with shokupan, rice crackers, cured egg yolk, crème fraîche, chives.",
+ "Antonius caviar (Siberian sturgeon, non-pasteurised) · crème fraîche · shaved cured egg yolk · chives · rice cracker chips · shokupan",{
+ fish:"N:caviar (sturgeon roe)",egg:"A:shaved cured yolk on the side: ask if it can come off",
+ df:"A:crème fraîche: ask if it can come off",gf:"A:shokupan has gluten: ask for rice crackers only",
+ allium:"A:chives: ask if they can come off",veg:"N:caviar",vegan:"N:caviar",
+ preg:"N:non-pasteurised caviar",halal:"A:sturgeon is not halal for every school"}],
+["alc","Starter","Grilled edamame, spring onion oil & shichimi","Grilled edamame with spring onion oil and shichimi.",
+ "edamame · spring onion oil (spring onion, grapeseed oil) · shichimi togarashi (sesame, chilli, orange peel, poppy seed, Szechwan pepper, ginger, seaweed)",{
+ soy:"N:edamame ARE soy beans",chilli:"M:Sea Salt Edamame version, no shichimi",sesame:"M:sesame in the shichimi: Sea Salt version",
+ allium:"A:spring onion oil: ask if the Sea Salt version uses it too",vegan:"P:",veg:"P:"}],
+["alc","Starter","Japanese Sweet Potato Cake","Sweet potato in beer batter with smoked tomato emulsion & curry leaf.",
+ "Japanese sweet potato · fried in beer batter · vinegar powder, salt · smoked tomato emulsion · curry leaf · notes say it contains: egg, onion/garlic, beer",{
+ df:"O:",nut:"O:",veg:"O:",gf:"M:can be done GF",allium:"M:can be done without",halal:"M:beer batter: can be done halal",
+ egg:"N:contains egg",vegan:"N:contains egg"}],
+["alc","Starter","Jonella Farm asparagus","Asparagus with den miso, nori & sesame. Vegan menu only.",
+ "asparagus skewer brushed with sake, mirin, soy sauce · den miso dressing · sesame seeds · shio kombu · nori",{
+ vegan:"O:it is on the vegan menu",veg:"O:",soy:"N:soy sauce and miso",gf:"A:soy sauce and miso: ask if GF",
+ sesame:"N:sesame seeds",halal:"N:sake and mirin (alcohol)"}],
+["alc","Starter","Prawn toast, Chinese doughnut & chili amazu","Chinese doughnut with prawn filling, sesame crust, chili amazu.",
+ "Chinese doughnut · prawn mixture: prawns, egg white, sesame oil, granulated garlic, salt, sugar, spring onion whites · sesame crust · chili amazu: amazu (sweet vinegar), yuzu juice, LKK chilli oil, black pepper",{
+ shell:"N:prawns",egg:"N:egg white in the filling",sesame:"N:sesame crust and oil",gf:"N:Chinese doughnut",
+ allium:"N:garlic and spring onion in the filling",chilli:"M:chili amazu served on the side",veg:"N:prawns",vegan:"N:prawns"}],
+["alc","Starter","Wagyu beef tataki","Sher Wagyu sirloin seared, brown butter ponzu, Davidson plum, smoked egg yolk emulsion.",
+ "Sher Wagyu Sirloin MBS 7+ seared · brown butter ponzu: GF soy sauce, sake, mirin, aged vinegar, spring onion, brown butter · emulsion: egg yolk, smoked egg yolk, oil, salt, vinegar · Davidson plum puree: Davidson plum, yuzu marmalade, GF soy sauce, sake, mirin, palm sugar",{
+ egg:"M:can be done without the egg emulsion",allium:"O:",sesame:"O:",halal:"M:without sake and mirin",
+ df:"A:notes say dairy free, but the ponzu has brown butter: ask",gf:"P:uses GF soy",
+ soy:"N:GF soy in the sauces",veg:"N:beef",vegan:"N:beef",preg:"N:rare beef and raw yolk"}],
+["alc","Starter","Dressed blue swimmer crab","Crab with pickled ginger mayo, furikake, nashi pear. Black sesame rice cracker.",
+ "cooked blue swimmer crab · ginger mayo: pickled ginger, egg, oil, miso, bonito · furikake: nori, chilli, black & white sesame, bonito flakes · nashi pear · black sesame rice cracker",{
+ allium:"O:",shell:"N:crab",egg:"N:mayo",fish:"N:bonito in mayo and furikake",sesame:"N:furikake and cracker",
+ soy:"N:miso in the mayo",chilli:"N:chilli in the furikake",gf:"A:miso and rice cracker: ask",
+ veg:"N:crab",vegan:"N:crab",preg:"A:egg mayo: ask if pasteurised"}],
+["alc","Starter","Vegan Tempeh Skewer","Tempeh skewer with roasted shallot & pickled fennel.",
+ "tempeh · pickled fennel · roasted shallot dressing: onion, garlic, dried chili, palm sugar, tamarind, vegan fish sauce",{
+ vegan:"O:",veg:"O:",soy:"N:tempeh is fermented soy",allium:"M:swapped for a different sauce",
+ chilli:"A:chilli in the dressing: ask if the swap sauce has it too",gf:"A:vegan fish sauce: ask if GF"}],
+// ---------- MAINS ----------
+["alc","Main","QLD Giant Grouper","Grouper baked with ginger laksa paste, tomato, green mango & myoga.",
+ "QLD Giant Grouper · ginger laksa paste: shallot, garlic, myoga ginger, red chilli, turmeric, lemongrass · tomato salad: cherry tomatoes, Thai basil, Viet mint, green mango, palm sugar, chilli, fish sauce, tamarind",{
+ gf:"O:",df:"O:",egg:"O:",nut:"O:",pork:"O:",preg:"O:stated: pregnancy friendly",
+ fish:"N:grouper and fish sauce",allium:"N:shallot and garlic in the paste",chilli:"N:chilli",
+ shell:"A:open question: does the laksa paste contain shrimp paste?",veg:"N:fish",vegan:"N:fish"}],
+["alc","Main","XO pipis, Chinese doughnut, curry leaf, kimchee","Wok-tossed pipis in XO sauce, Chinese doughnut, kimchee mayo, pickled onion.",
+ "pipis · XO sauce (dried scallop/conpoy, dried fish, dried shrimp, pork, chilli, onion, garlic) · Chinese doughnuts · kimchee mayo · pickled onion · curry leaf · flowers",{
+ nut:"O:",df:"M:can be done dairy free",gf:"N:Chinese doughnut",allium:"N:",pork:"N:pork in the XO sauce",
+ shell:"N:pipis and XO sauce",sesame:"N:",egg:"N:kimchee mayo",fish:"N:dried fish in the XO",chilli:"N:XO sauce",
+ veg:"N:shellfish",vegan:"N:shellfish",halal:"N:pork in the XO",preg:"A:"}],
+["alc","Main","Wood grilled pastured chicken","Chicken thigh over wood fire, Balinese-style marinade, pickled ginger on the side.",
+ "chicken thigh · marinade: lemongrass, oyster sauce, chili, ginger, galangal, turmeric, black pepper, coriander seed, bay leaf, kaffir lime leaf, nutmeg, garlic, shallot, palm sugar, soy sauce · pickled ginger",{
+ nut:"O:",df:"O:",egg:"O:",halal:"O:",
+ gf:"N:soy sauce and oyster sauce. No exceptions: marinade can't come off",
+ shell:"N:oyster sauce in the marinade. No exceptions",allium:"N:garlic and shallot. No exceptions",
+ chilli:"N:spicy marinade can't come off",soy:"N:soy sauce",veg:"N:chicken",vegan:"N:chicken"}],
+["alc","Main","David Blackmore Karubi Yakiniku","Karubi slow roasted 3 hrs, ginger & spring onion relish, carrot, cucumber, coriander, 4 bao buns.",
+ "karubi (boneless short rib) · rub: sea salt, cumin seeds, fennel seeds, brown sugar, onion powder, garlic powder · dark sauce (not described) · relish: spring onion, ginger, vegetable oil, seeded mustard, pickled ginger · carrot, cucumber, coriander · 4 bao buns · topping: black & white sesame, spring onion, egg yolk",{
+ sesame:"N:sesame on top",allium:"N:onion & garlic powder, spring onion",egg:"M:yolk on top can come off",
+ gf:"N:bao buns",df:"A:bao buns and dark sauce not described: ask",soy:"A:dark sauce not described: ask",
+ veg:"N:beef",vegan:"N:beef",preg:"M:remove the raw yolk"}],
+["alc","Main","Wagyu Bavette MBS 9+ (David Blackmore)","200 g, tarragon ponzu, yuzu kosho on the side.",
+ "bavette 200 g · tarragon ponzu: rice vinegar, sesame oil, tarragon, ginger, garlic, soy sauce, jōhakutō sugar · yuzu kosho: jalapeño, green chili, salt, lime zest",{
+ df:"O:",nut:"O:",egg:"O:",gf:"M:substitute ponzu",sesame:"M:substitute ponzu",
+ soy:"A:ponzu has soy: ask if the substitute is soy free",allium:"A:ponzu has garlic: ask if the substitute is without",
+ chilli:"M:yuzu kosho is already on the side",veg:"N:beef",vegan:"N:beef",preg:"M:cook well done"}],
+["alc","Main","Sher Wagyu Sirloin MBS 7+","250 g, tarragon ponzu, yuzu kosho on the side.",
+ "sirloin 250 g · tarragon ponzu: rice vinegar, sesame oil, tarragon, ginger, garlic, soy sauce, jōhakutō sugar · yuzu kosho: jalapeño, green chili, salt, lime zest",{
+ df:"O:",nut:"O:",egg:"O:",gf:"M:substitute ponzu",sesame:"M:substitute ponzu",
+ soy:"A:ponzu has soy: ask if the substitute is soy free",allium:"A:ponzu has garlic: ask if the substitute is without",
+ chilli:"M:yuzu kosho is already on the side",veg:"N:beef",vegan:"N:beef",preg:"M:cook well done"}],
+["alc","Main","Sanchoku Scotch Fillet MBS 9+","400 g, tarragon ponzu, yuzu kosho on the side.",
+ "scotch fillet 400 g · tarragon ponzu: rice vinegar, sesame oil, tarragon, ginger, garlic, soy sauce, jōhakutō sugar · yuzu kosho: jalapeño, green chili, salt, lime zest",{
+ df:"O:",nut:"O:",egg:"O:",gf:"M:substitute ponzu",sesame:"M:substitute ponzu",
+ soy:"A:ponzu has soy: ask if the substitute is soy free",allium:"A:ponzu has garlic: ask if the substitute is without",
+ chilli:"M:yuzu kosho is already on the side",veg:"N:beef",vegan:"N:beef",preg:"M:cook well done"}],
+["alc","Main","Kung Pao Cauliflower (Vegan)","Kung pao cauliflower with cashew sauce, puffed grains and curry leaf.",
+ "cauliflower · vegan fish sauce, rice flour, soy sauce, dried chilli, rice vinegar, onion, chilli, spring onion, Chinkiang vinegar, ginger, Sichuan pepper · cashew sauce: brown onion, cashews, soy milk, fennel seed, cardamom, Nuttelex · puffed grains: wild rice, dried yeast, puffed quinoa, salt, vinegar powder · fried curry leaves",{
+ vegan:"O:",veg:"O:",df:"P:uses Nuttelex and soy milk",nut:"M:cashews: can be done without",allium:"M:can be done without",
+ gf:"M:can be done GF",chilli:"M:can be done without",soy:"N:soy sauce and soy milk"}],
+// ---------- SIDES ----------
+["alc","Side","Kohlrabi & Fennel Salad","Kohlrabi, fennel, green apple, celery, Thai basil.",
+ "kohlrabi, green apple, fennel, celery, snow pea tendril, wasabi peas · dressing: mint, Thai basil, ginger, grapeseed oil, lime juice, salt, coriander, green chilli, tamarind puree, GF soy, honey, sesame oil, miso",{
+ sesame:"N:sesame oil",soy:"N:GF soy and miso",chilli:"M:can be removed",vegan:"N:honey in the dressing",
+ gf:"A:GF soy, but miso and wasabi peas: ask"}],
+["alc","Side","Stir fried Broccolini","Broccolini with chilli, ginger flower, oyster sauce and shaoxing.",
+ "broccolini · chilli · ginger flower · oyster sauce · shaoxing wine",{
+ gf:"O:",df:"O:",nut:"O:",egg:"O:",shell:"M:can be done with no seafood",fish:"M:can be done with no seafood",
+ veg:"M:can suit all dietaries",vegan:"M:can suit all dietaries",allium:"M:can suit all dietaries",chilli:"M:can suit all dietaries",
+ sesame:"M:can suit all dietaries",soy:"M:can suit all dietaries",halal:"A:notes say halal, but there is shaoxing (rice wine): ask"}],
+["alc","Side","Fried eggplant, bonito ponzu glaze & itogaki","Crispy eggplant, bonito ponzu glaze, itogaki tuna flakes.",
+ "eggplant · GF batter: tapioca starch, xanthan gum, sparkling water, rice flour · glaze: palm sugar, water, glucose, aojiso dressing, sesame oil, garlic, ginger, red chili, shallot, white miso, Lao Gan Ma and LKK chili oil · itogaki tuna flakes · chives · sesame seed",{
+ gf:"A:GF batter, but the glaze has miso and aojiso: ask",fish:"N:tuna flakes and aojiso",shell:"A:aojiso dressing is made with seafood",
+ sesame:"N:oil and seeds",soy:"N:miso and aojiso",allium:"N:garlic, shallot, chives",chilli:"N:chilli oil",
+ veg:"N:tuna and bonito",vegan:"N:tuna and bonito"}],
+["alc","Side","Silken tofu","Silken tofu with pickled chilli, sambal kecap and coriander.",
+ "silken tofu brined in black vinegar & fried · sambal kecap: shallot, garlic, red chilli, pickled Guindilla chilli, kecap, rice vinegar, coriander, Thai basil, mint, lime",{
+ soy:"N:tofu and kecap",allium:"N:shallot and garlic in the sambal",chilli:"N:sambal and chilli",
+ gf:"A:kecap and black vinegar: ask"}],
+["alc","Side","Yūgen special fried rice (XO, char siu, prawn)","Fried rice with XO, prawns, char siu pork, typhoon shelter crumble.",
+ "air dried jasmine rice · XO sauce · prawns · char siu pork · garlic shoots · bird's eye chili · garlic · spring onion · white pepper · salt · fish sauce · shaoxing wine · typhoon shelter crumble: puffed rice, garlic crisp, dry chili, Sichuan red pepper, shallot oil",{
+ shell:"N:prawns and XO",pork:"N:char siu",fish:"N:fish sauce and XO",allium:"N:",chilli:"N:",
+ gf:"A:XO and shaoxing: ask",halal:"N:pork and shaoxing",veg:"N:",vegan:"N:",preg:"A:"}],
+["alc","Side","Southern Rock Lobster Fried Rice","Lobster with sambal matah, rice with kani miso, corn, butter, egg.",
+ "Southern Rock Lobster sous vide & grilled · sambal matah: bird's eye chilli, onion, garlic, lime, oil · rice: kani miso (crab miso), garlic shoot, rice wine, corn, butter, garlic, onion, egg",{
+ nut:"O:",pork:"O:",gf:"O:",shell:"N:lobster and kani miso (crab)",allium:"N:",chilli:"N:sambal matah",
+ df:"N:butter",egg:"N:egg in the rice",soy:"N:miso",halal:"A:rice wine",veg:"N:",vegan:"N:"}],
+["alc","Side","Egg fried rice, honest eggs","Egg fried rice with warishita mushrooms, nori butter, crispy seaweed.",
+ "jasmine rice · honest eggs · Korean seaweed (fried, vinegar powder) · warishita mushroom: dried shiitake, sake, mirin, Yamasa soy, corn starch · nori butter: butter, garlic, shallot, nori paste, potato starch, white pepper, soy sauce · spring onion · chives · oyster sauce · fish sauce",{
+ egg:"N:it is egg fried rice",df:"N:nori butter",shell:"M:vegetarian version without oyster sauce",
+ fish:"M:vegetarian version without fish sauce",veg:"M:vegetarian version",vegan:"N:egg and butter",
+ allium:"N:garlic, shallot, spring onion",soy:"N:soy sauce",gf:"N:soy sauce",halal:"N:sake and mirin in the mushrooms"}],
+["alc","Side","Vegan Mushroom Fried Rice","Fried rice with shiitake and crispy seaweed.",
+ "jasmine rice · Korean seaweed · warishita mushroom (shiitake, sake, mirin, Yamasa soy) · nori butter · spring onion · chives · oyster sauce · fish sauce (as written in the notes)",{
+ vegan:"A:⚠ notes list oyster sauce, fish sauce and nori butter: open question for the chef",
+ veg:"A:same open question",df:"A:nori butter in the notes",shell:"A:oyster sauce in the notes",fish:"A:fish sauce in the notes",
+ allium:"N:",soy:"N:soy sauce",gf:"N:soy sauce",halal:"N:sake and mirin in the mushrooms"}],
+["alc","Side","Steamed rice","Not in the Food Notes, but the kitchen can do it. Good for fussy kids.",
+ "steamed rice",{halal:"P:",preg:"P:"}],
+// ---------- DESSERTS ----------
+["alc","Dessert","Valrhona Dark Chocolate Mousse","Dark chocolate mousse, Morello cherry cremeux, spiced fruit mince, matcha sponge.",
+ "fruit mince mix (apricot brandy, whiskey) · dark chocolate mousse · dark chocolate dip · matcha sponge · cherry cremeux · chocolate soil · tempered chocolate twigs · beef gelatine",{
+ df:"N:mousse and chocolate",veg:"N:beef gelatine",vegan:"N:beef gelatine",halal:"N:brandy and whiskey (cooked) and beef gelatine",
+ gf:"A:matcha sponge: ask",egg:"A:not declared: ask",nut:"A:not declared: ask",preg:"P:alcohol is cooked"}],
+["alc","Dessert","Coconut namelaka, calamansi, fingerlime","Coconut namelaka, calamansi tuile, yuzu jelly, nata de coco, citrus.",
+ "coconut namelaka: Kara coconut cream, Valrhona white chocolate, sucrose, pectin NH, salt · calamansi glass tuile · yuzu jelly: yuzu juice, water, sucrose, agar · palm seeds · nata de coco · orange, grapefruit, finger lime · shaved ice: calamansi puree, glucose, sucrose, pectin",{
+ vegan:"A:⚠ it's the vegan option, but the namelaka has white chocolate: ask",
+ df:"A:white chocolate in the namelaka: ask",veg:"P:the only dessert without beef gelatine",halal:"P:no gelatine"}],
+["alc","Dessert","Osmanthus apricot mousse","Osmanthus mousse, apricot insert, white glaze, sable, fermented rice wine poured at the table.",
+ "osmanthus mousse: gelatine, osmanthus cream, water, sucrose, egg yolks · apricot insert: apricot puree, glucose, sucrose, pectin, lemon juice · white glaze: gelatine, milk, cream, glucose, white chocolate · sable: butter, icing sugar, salt, egg yolks, flour, corn flour · fermented rice wine · dried osmanthus · alyssum · beef gelatine",{
+ egg:"N:egg yolks",df:"N:milk, cream, butter",gf:"N:flour in the sable",veg:"N:beef gelatine",vegan:"N:",
+ halal:"A:rice wine can go alcohol free, but gelatine is beef: ask",preg:"M:alcohol-free rice wine"}],
+["alc","Dessert","Pandan Cheesecake Mochi","Pandan cheesecake mochi, white peach & lychee insert, vanilla crumb.",
+ "lychee white peach insert: white peach puree, glucose, lemon juice, lychees · pandan cheesecake: cream cheese, sucrose, milk, pandan, gelatine · snow skin: glutinous rice flour, rice flour, sucrose, milk, vegetable oil · vanilla crumb: rice flour, corn flour, sucrose, salt, butter, vanilla · beef gelatine",{
+ df:"N:cheese, milk, butter",veg:"N:beef gelatine",vegan:"N:",gf:"P:only rice and corn flours (glutinous rice has NO gluten)",
+ halal:"A:beef gelatine: ask if certified"}],
+["alc","Dessert","Strawberry Matcha Celebration Cake","Matcha base, strawberry parfait, whipped cream. Off menu: preorder or order on the night.",
+ "matcha cake base · strawberry parfait · whipped cream · edible flowers · beef gelatine",{
+ df:"N:cream",veg:"N:beef gelatine (all desserts except the namelaka)",vegan:"N:",gf:"A:not declared: ask",
+ egg:"A:not declared: ask",nut:"A:not declared: ask",halal:"A:beef gelatine"}],
+// ---------- CHEF'S EXPERIENCE ----------
+["chef","Chef's","Hokkaido scallops, yuzu & pistachio","Spring roll tartlet with scallop, pistachio puree, yuzu gel.",
+ "spring roll pastry tartlet brushed with egg · Hokkaido scallop diced · pistachio puree: pistachio, water, salt, lime juice · yuzu gel: apple juice, yuzu juice, agar agar",{
+ shell:"N:scallops",nut:"N:pistachio",gf:"M:can go on rice cracker",egg:"M:tartlet is egg washed: rice cracker",
+ veg:"N:",vegan:"N:",preg:"A:raw scallop: ask"}],
+["chef","Chef's","Cauliflower, golden raisin & cashew lavosh","Cauliflower, cashew and golden raisin on lavosh.",
+ "cauliflower, cashew, soy milk, golden raisin, onion, fennel seed, coriander seed, chive, soy sauce, white wine vinegar · lavosh",{
+ df:"O:",shell:"O:",veg:"O:",vegan:"O:",nut:"N:cashews",allium:"N:onion and chives",
+ gf:"M:can go on rice cracker",soy:"N:soy milk and soy sauce"}],
+["chef","Chef's","Bluefin tuna, nori & Oscietra caviar","Fried nori cigar with tuna tartare, white anchovy emulsion, caviar, furikake.",
+ "nori cigar deep fried · tuna tartare: shallot, pickled gherkin, chives, capers, olive oil · tuna sashimi wrap · white anchovy emulsion · Oscietra caviar · furikake",{
+ fish:"N:tuna, anchovy, caviar",allium:"N:shallot and chives",sesame:"N:furikake",chilli:"N:furikake",
+ egg:"A:anchovy emulsion: ask if it has egg",gf:"A:not declared: ask",veg:"N:",vegan:"N:",preg:"N:raw tuna and caviar"}],
+["chef","Chef's","Kuih rose, sesame & kaffir lime","Fried kuih rose with swimmer crab, ginger mayo, furikake, nashi pear.",
+ "kuih rose: coconut cream, rice flour, egg, sugar, salt, lemongrass, galangal, lime leaf, deep fried · blue swimmer crab · ginger mayo: pickled ginger, egg, oil, miso, bonito · furikake: nori, chilli, sesame, bonito · nashi pear",{
+ df:"O:",allium:"O:",halal:"O:",nut:"O:",gf:"O:",egg:"N:batter and mayo",shell:"N:crab",
+ fish:"N:bonito",sesame:"N:",soy:"N:miso",chilli:"N:furikake",veg:"N:pescatarian",vegan:"N:",preg:"A:egg mayo: ask"}],
+["chef","Chef's","Jonella Farms corn chawanmushi, smoked trout","Baked corn custard with brown butter and unagi. Tostada with smoked trout and green mango.",
+ "corn custard (egg, corn) · brown butter · unagi (eel) · corn tostada · smoked rainbow trout · green mango salad (contains onion)",{
+ gf:"O:",nut:"O:",shell:"O:",halal:"O:",allium:"M:onion can come off",
+ df:"N:butter",egg:"N:it's an egg custard",fish:"N:smoked trout and unagi (eel, confirmed by the chef)",
+ soy:"A:unagi is usually glazed with soy: ask",veg:"N:",vegan:"N:",preg:"A:cold smoked fish: ask"}],
+["chef","Chef's","Seasonal Fish, ginger & tom kha","Coral trout with ginger laksa paste, parsnip puree, tom kha broth.",
+ "parsnip puree · coral trout · ginger laksa paste: ginger, ginger flour, onion, garlic, fish sauce, turmeric, chilli · tom kha: coconut cream, red onion, kaffir lime, red chilli, fish sauce, ginger, sugar · kaffir lime leaf · pickled wombok",{
+ shell:"O:",egg:"O:",nut:"O:",gf:"O:",halal:"O:",allium:"N:",fish:"N:fish and fish sauce",chilli:"N:",
+ df:"P:coconut, not dairy",veg:"N:",vegan:"N:"}],
+["chef","Chef's","Coconut duck spring roll, angelica & mushroom tea","Duck & coconut spring roll in brick pastry, angelica tea with duck stock and mushrooms.",
+ "angelica tea: duck stock, five spice, angelica root, dark soy, garlic, shallot, oyster sauce, black pepper, chicken bones · spring roll in brick pastry: duck leg, coconut cream, five spice, kaffir lime, lemongrass, onion, garlic, curry leaf, dark soy · seasonal mushroom",{
+ gf:"M:vegetarian roll in rice paper",
+ shell:"M:oyster sauce in the tea: kitchen swaps tea and roll for the sweet potato cake",
+ allium:"N:",soy:"N:dark soy",veg:"A:there's a vegetarian roll, but the tea has duck & chicken stock: ask",
+ vegan:"A:same question",halal:"A:"}],
+["chef","Chef's","Sher Wagyu sirloin, charred onion, tamarind","Grilled sirloin with brown butter, onion & tamarind puree, onion rings, jus, green peppercorn relish.",
+ "Sher Wagyu sirloin MBS 7+ · brown butter · onion puree: red onion, tamarind, oil, salt, palm sugar · onion rings: white wine vinegar, sugar, salt, rice flour · beef jus: onion, garlic, spices, soy sauce, nori, kombu, beef stock · green peppercorn relish: green peppercorns, vinegar, palm sugar, chilli, soy sauce",{
+ df:"M:can be done without brown butter",allium:"N:onion is the heart of the dish",soy:"N:soy sauce",
+ chilli:"N:relish",gf:"A:soy sauce in jus and relish: ask",veg:"N:",vegan:"N:",preg:"M:cook well done"}],
+["chef","Chef's","Dessert Bento Box","Jasmine macaron, yuzu meringue tart, honey & mandarin mini magnum.",
+ "jasmine macaron (gluten, dairy, egg) · yuzu meringue tart (gluten, dairy, egg) · honey & mandarin magnum dipped in dark chocolate and cocoa nibs (GF)",{
+ gf:"M:variations possible, MOD will advise",df:"M:variations possible, MOD will advise",egg:"M:variations possible, MOD will advise",
+ nut:"A:tart and magnum are nut free, macaron not declared: ask",veg:"A:",vegan:"A:"}]
+];
+
+const RANK={O:0,P:1,M:2,A:3,N:4};
+const META={
+ O:{k:"ok",t:"Yes, stated",p:"STATED",s:"✓",d:"The Food Notes say so"},
+ P:{k:"prob",t:"Yes, confirm",p:"CONFIRM",s:"✓",d:"No conflict, but not declared"},
+ M:{k:"mod",t:"Can adapt",p:"ADAPT",s:"↺",d:"With a change on the docket"},
+ A:{k:"ask",t:"Ask chef",p:"ASK",s:"?",d:"Unclear in the notes · on the Chef list"},
+ N:{k:"no",t:"No",p:"NO",s:"✕",d:"Contains the ingredient"}};
+const ORDER=["O","P","M","A","N"];
+const MEAT=/\b(beef|wagyu|chicken|duck|pork|char siu|karubi|bavette|sirloin|scotch fillet|gelatine)\b|\bXO\b/i;
+const BEEF=/\b(beef|wagyu|karubi|bavette|sirloin|scotch fillet)\b/i;
+const ROOT=/\b(onion|garlic|shallot|sweet potato|potato|carrot|ginger|daikon|parsnip|turmeric|galangal|radish)\b/i;
+const FRIED=/fried|\bfry\b/i;
+function worst(...xs){return xs.reduce((a,b)=>RANK[b[0]]>RANK[a[0]]?b:a)}
+const DERIVED={
+ pesc(d){const m=d[4].match(MEAT);if(m)return ["N","contains "+(m[0].toUpperCase()==="XO"?"XO sauce (pork)":m[0])];
+   const v=st(d,"veg");return v[0]==="N"?["P","fish / seafood is fine for pescatarians"]:v},
+ lacto(d){return worst(st(d,"veg"),st(d,"egg"))},
+ buddhist(d){return worst(st(d,"veg"),st(d,"allium"))},
+ jain(d){let r=worst(st(d,"veg"),st(d,"egg"),st(d,"allium"));
+   if(/honey/i.test(d[4]))return ["N","honey"];
+   const m=d[4].match(ROOT);if(m&&RANK[r[0]]<RANK.A)r=["A","root vegetable ("+m[0]+"): strict Jains avoid it, ask the guest"];return r},
+ kosher(d){const p=st(d,"pork"),sh=st(d,"shell");
+   if(p[0]==="N")return ["N","pork"];if(sh[0]==="N")return ["N","shellfish"];
+   if(MEAT.test(d[4])&&st(d,"df")[0]==="N")return ["N","mixes meat and dairy"];
+   const w=worst(p,sh);if(w[0]==="M"||w[0]==="A")return w;
+   return ["A","kosher-style only: the kitchen and the meat are not kosher certified"]},
+ beef(d){const m=d[4].match(BEEF);if(m)return ["N",m[0]];if(/gelatine/i.test(d[4]))return ["N","beef gelatine"];return ["P","no beef in the notes"]},
+ onion(d){return splitAllium(d,"onion")},
+ garlic(d){return splitAllium(d,"garlic")},
+ coeliac(d){const g=st(d,"gf");if(RANK[g[0]]<RANK.A&&FRIED.test(d[4]))return ["A","fried: ask about a shared fryer (cross-contact)"];
+   if(RANK[g[0]]<RANK.A)return [g[0]==="O"?"P":g[0],(g[1]?g[1]+" · ":"")+"tell the kitchen it's coeliac, not a preference"];return g}
+};
+// the notes treat onion and garlic as one ("allium"): split them by what the components actually list
+function splitAllium(d,which){
+  const base=st(d,"allium");
+  if(RANK[base[0]]<=RANK.P)return base;
+  const re=which==="garlic"?/garlic/i:/\b(spring onion|onion|shallot|chive|leek)/i;
+  const m=d[4].match(re);
+  if(!m)return ["P","no "+which+" listed (the notes group onion and garlic together)"];
+  if(base[0]==="N")return ["N",m[0]+(base[1]?" · "+base[1]:"")];
+  return base;
+}
+function st0(d,key){
+  if(DERIVED[key])return DERIVED[key](d);
+  const v=d[5][key];
+  if(v){const i=v.indexOf(":");return [v.slice(0,i),v.slice(i+1)]}
+  if(key==="halal")return ["A","not declared: certified meat and alcohol in mirin/sake need confirming"];
+  if(key==="preg")return ["P","cooked dish, no risky ingredient in the notes"];
+  return ["P","no conflicting ingredient in the notes"];
+}
+
+/* ---------- "can it be done without?" asked to the chef ---------- */
+const ASK_DIETS=["gf","df","egg","nut","shell","fish","sesame","soy","onion","garlic","chilli"];
+const STAR=/\b(tuna|salmon|kingfish|snapper|scallops?|caviar|grouper|pipis?|lobster|trout|tofu|tempeh|edamame|crab|prawns?|anchovy|unagi|custard|cheese|cream cheese|honest eggs)\b/i;
+const wkey=(d,t)=>"w|"+d[2]+"|"+t.toLowerCase();
+function isCore(d,term,seg){const t=term.toLowerCase(),n=d[2].toLowerCase();
+  if(n.includes(t.replace(/s$/,"")))return true;
+  return STAR.test(t)&&(seg===d[4].split(" · ")[0]||n.includes(t))}
+function segLabel(seg,term){const t=term.toLowerCase(),i=seg.indexOf(":"),lab=i>0?seg.slice(0,i).trim().toLowerCase():"";
+  if(/^notes say/.test(lab))return t;return lab&&lab.includes(t)?lab:lab&&lab.length<40?t+", in the "+lab:t}
+function st(d,key){
+  const r=st0(d,key);
+  if(r[0]!=="N"||!DIET_FAM[key])return r;
+  const f=findings(d,key);if(!f.length)return r;
+  const v=f.map(x=>isCore(d,x.term,x.seg)?"core":(ans[wkey(d,x.term)]||""));
+  if(v.every(x=>x==="yes"))return ["M","chef confirmed: can be done without "+f.map(x=>x.term).join(", ")];
+  return r;
+}
+/* ---------- ingredient families (regex pieces, written to avoid false hits: egg≠eggplant, nut≠coconut) ---------- */
+const F={
+ shellfish:["oyster sauce","prawn","shrimp","crab","lobster","scallop","conpoy","oyster","pipi","clam","\\bXO\\b","kani","aojiso"],
+ fish:["vegan fish sauce","fish sauce","tuna","bonito","salmon","kingfish","snapper","grouper","trout","anchovy","caviar","unagi","\\beel\\b","itogaki","\\bXO\\b","aojiso","furikake"],
+ gluten:["dark soy","soy sauce","Yamasa soy","doughnut","shokupan","\\bbao\\b","lavosh","brick pastry","spring roll pastry","beer","sponge","sable","macaron","meringue tart","(?<!rice |corn |glutinous rice |ginger )flour","\\bgluten\\b"],
+ dairy:["(?<!soy )milk","nori butter","brown butter","butter","(?<!coconut )cream","cheese","crème fraîche","white chocolate","\\bdairy\\b"],
+ alcohol:["mirin","sake","shaoxing","rice wine","beer","brandy","whiskey","white wine(?! vinegar)"],
+ allium:["spring onion","onion","garlic","shallot","chive"],
+ onionF:["spring onion","onion","shallot","chive","leek"],
+ garlicF:["garlic"],
+ chilli:["chilli oil","LKK chilli oil","Lao Gan Ma","chilli","chili","chiles","shichimi","kosho","sambal","jalapeño","\\bXO\\b","guindilla","furikake"],
+ egg:["egg white","egg yolk","\\begg(?!plant)","yolk","mayo","emulsion","custard","meringue","macaron"],
+ nuts:["cashew","pistachio","almond","peanut","walnut","hazelnut","macadamia","\\bnuts?\\b"],
+ sesame:["sesame","shichimi","furikake"],
+ soy:["edamame","tempeh","tofu","kecap","miso","dark soy","soy sauce","soy milk","GF soy","Yamasa soy","\\bsoy\\b","ponzu","aojiso"],
+ gelatine:["gelatine"],
+ meat:["beef","wagyu","chicken","duck","pork","char siu","karubi","bavette","sirloin","scotch fillet","gelatine","\\bXO\\b"],
+ pork:["char siu","pork","\\bXO\\b"],
+ beef:["beef","wagyu","karubi","bavette","sirloin","scotch fillet","gelatine"],
+ honey:["honey"],
+ root:["sweet potato","potato","carrot","ginger","daikon","parsnip","turmeric","galangal"],
+ raw:["sashimi","raw","tartare","oyster","caviar","yolk","mayo","smoked","seared","scallop"],
+ fried:["deep fried","fried"]
+};
+const DIET_FAM={gf:["gluten"],coeliac:["gluten","fried"],df:["dairy"],egg:["egg"],nut:["nuts"],shell:["shellfish"],fish:["fish"],
+ sesame:["sesame"],soy:["soy"],allium:["allium"],onion:["onionF"],garlic:["garlicF"],chilli:["chilli"],veg:["meat","fish","shellfish"],vegan:["meat","fish","shellfish","dairy","egg","honey"],
+ pesc:["meat"],lacto:["meat","fish","shellfish","egg"],buddhist:["meat","fish","shellfish","allium"],jain:["meat","fish","shellfish","egg","allium","honey","root"],
+ halal:["pork","alcohol","gelatine"],kosher:["pork","shellfish"],pork:["pork"],beef:["beef"],preg:["raw"]};
+const plainLen=t=>t.replace(/\(\?<?!.*?\)/g,"").replace(/\\b/g,"").length;
+const famRe=fams=>new RegExp("("+[...new Set(fams.flatMap(f=>F[f]))].sort((a,b)=>plainLen(b)-plainLen(a)).join("|")+")","gi");
+
+/* ---------- why each ingredient is there (first match wins) ---------- */
+const ROLES=[
+ [/vegan fish sauce/i,"Plant-based fish sauce: copies the salty, savoury hit without any fish."],
+ [/oyster sauce/i,"Thick sauce from oyster extract: deep savoury flavour (umami) and gloss. It seasons the whole thing, so it can't be picked out."],
+ [/fish sauce/i,"Fermented anchovy: SE Asian cooks use it instead of plain salt because it adds savoury depth too."],
+ [/\bXO\b/i,"Hong Kong sauce of dried scallop, shrimp, fish and ham with chilli: concentrated seafood umami. One spoon carries the whole dish."],
+ [/aojiso/i,"Shiso soy dressing made with seafood: herbal freshness plus savoury depth."],
+ [/itogaki/i,"Fine threads of dried tuna: smoky umami and a feathery texture that 'dances' on the hot eggplant."],
+ [/bonito/i,"Smoked, dried tuna flakes, the base of Japanese dashi: smoky umami that makes sauces taste deeper."],
+ [/furikake/i,"Japanese sprinkle of nori, sesame, bonito and chilli: crunch, salt and umami in one go."],
+ [/shichimi/i,"Japanese 7-spice: chilli heat plus orange peel and sesame aroma, so it smells fresh, not just hot."],
+ [/kosho/i,"Fermented chilli and citrus paste: bright heat that cuts through rich, fatty food."],
+ [/sambal/i,"SE Asian chilli relish: heat, acidity and aromatics to wake up a mild ingredient."],
+ [/lao gan ma|lkk|chill?i oil/i,"Chilli oil: heat plus a toasty, savoury aroma."],
+ [/jalapeño|guindilla|chill?i|chiles/i,"Heat: it lifts and balances sweet or fatty flavours."],
+ [/miso/i,"Fermented soybean paste: salty umami and body. Some miso is made with barley, which is why gluten is a question."],
+ [/kecap/i,"Indonesian sweet soy sauce: sweet-salty and sticky, it balances the chilli."],
+ [/ponzu/i,"Citrus soy sauce: salt and acidity together, it brightens raw fish and cuts through fatty meat."],
+ [/soy milk/i,"Gives creaminess without dairy."],
+ [/edamame|tofu|tempeh/i,"It's the heart of the dish, and it's made from soy beans."],
+ [/dark soy|soy sauce|yamasa soy|gf soy|\bsoy\b/i,"Salt and umami. Regular soy sauce is brewed with wheat, so it also brings gluten (GF soy / tamari doesn't)."],
+ [/sesame/i,"Nutty, toasty aroma and a little crunch."],
+ [/mirin/i,"Sweet rice wine: balances salt and gives shine. It contains alcohol."],
+ [/sake/i,"Rice wine: softens strong flavours and adds umami. It contains alcohol."],
+ [/shaoxing|rice wine/i,"Chinese rice wine: the classic aroma of wok cooking. It contains alcohol."],
+ [/beer/i,"The bubbles make the batter light and extra crisp."],
+ [/brandy|whiskey/i,"Soaks the fruit mince for warmth and depth; it's cooked."],
+ [/brown butter/i,"Butter cooked until it smells of hazelnut: toasty richness."],
+ [/nori butter/i,"Butter whipped with seaweed: rich and oceanic, it coats every grain of rice."],
+ [/butter/i,"Richness and a glossy finish."],
+ [/crème fraîche/i,"Tangy cream: cools and balances the salty caviar."],
+ [/cheese/i,"The cheesecake itself: tangy and rich."],
+ [/white chocolate/i,"Sweetness, and the cocoa butter helps the cream set silky."],
+ [/milk|cream/i,"Richness and a smooth texture."],
+ [/egg white/i,"Binds the prawn mix so it holds together when fried."],
+ [/egg yolk|yolk/i,"Richness; a raw yolk turns into a sauce when you mix it in."],
+ [/mayo/i,"Egg-based: creamy body that carries the other flavours."],
+ [/emulsion/i,"A silky sauce held together by egg yolk."],
+ [/custard/i,"Savoury egg custard: the silky base of the dish."],
+ [/meringue|macaron/i,"Made with egg whites, whipped for lightness."],
+ [/\begg(?!plant)/i,"Binds and enriches."],
+ [/gelatine/i,"Sets the mousse or cream so it holds its shape. It's beef gelatine."],
+ [/honey/i,"Natural sweetness that balances lime and chilli."],
+ [/doughnut/i,"Chinese fried dough (youtiao): crunch, and it soaks up sauce."],
+ [/shokupan/i,"Japanese milk bread: a soft, neutral base for the caviar."],
+ [/\bbao\b/i,"Soft steamed buns to wrap the meat, like a taco."],
+ [/flour|sponge|sable|lavosh|pastry/i,"Wheat gives structure and crunch."],
+ [/cashew/i,"Blended into a creamy sauce: richness without dairy."],
+ [/pistachio/i,"Blended into a sweet, creamy purée that holds the scallop."],
+ [/potato|carrot|ginger|daikon|parsnip|turmeric|galangal/i,"A root vegetable or spice root, used for flavour or body."],
+ [/onion|shallot|garlic|chive/i,"Aromatic base: sweetness and depth. In a paste or sauce it's blended in, so it can't be picked out."],
+ [/prawn|shrimp|crab|lobster|scallop|conpoy|pipi|oyster|kani|clam/i,"Seafood: the star of the dish, or the base of a sauce."],
+ [/tuna|salmon|kingfish|snapper|grouper|trout|anchovy|caviar|unagi|eel|sashimi/i,"Fish: the star of the dish."],
+ [/char siu|pork/i,"Sweet roast pork: savoury, sticky, meaty."],
+ [/beef|wagyu|karubi|bavette|sirloin|scotch fillet|duck|chicken/i,"The main protein."],
+ [/raw|tartare|seared|smoked/i,"Served raw or lightly cooked to keep it tender."],
+ [/fried/i,"Deep fried for crunch. Coeliacs worry about the shared fryer, not the dish."]
+];
+const roleOf=t=>{for(const [r,x] of ROLES)if(r.test(t))return x;return ""};
+
+/* ---------- state ---------- */
+let sel=new Set(),menu="all",tab="menu",hideNo=false,q="",ans={},custom=[],tags=[],imode="avoid";
+try{const s=JSON.parse(localStorage.getItem("yd3")||"{}");if(s.sel)sel=new Set(s.sel.filter(k=>LBL[k]));if(s.menu)menu=s.menu;if(s.tab)tab=s.tab;if(s.ans)ans=s.ans;if(s.custom)custom=s.custom;if(s.tags)tags=s.tags;if(s.imode)imode=s.imode;if(s.hideNo)hideNo=true}catch(e){}
+function save(){try{localStorage.setItem("yd3",JSON.stringify({sel:[...sel],menu,tab,ans,custom,tags,imode,hideNo}))}catch(e){}}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+const hash=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return "q"+(h>>>0).toString(36)};
+const hl=(txt,re)=>esc(txt).replace(re,"<mark>$1</mark>");
+const dishList=()=>D.filter(d=>menu==="all"||d[0]===menu);
+
+/* ---------- chef questions ---------- */
+const GENERAL=[
+ ["Caviar service","The printed menu says crispy rice, toasted shokupan and wasabi cream; the Food Notes say crème fraîche and chives. Which is current? Does the wasabi cream contain dairy?"],
+ ["Oyster & Oscietra Caviar","New on the menu, not in the Food Notes: what's on it, and is it the same mignonette?"],
+ ["N25 Oscietra & Kaluga Reserve","Same garnish as the Antonius? What's the difference to tell guests?"],
+ ["Wagyu beef tataki","The menu says “Sichuan”: is it Sichuan pepper? Where is it on the dish?"],
+ ["Stir fried Broccolini","The menu lists mushroom, the Food Notes don't. Which mushroom, and is the oyster sauce still in?"],
+ ["Karubi Yakiniku","Why is it called yakiniku (grilled) if it's slow roasted for 3 hours? Is it finished on the grill?"],
+ ["Sher Wagyu Sirloin","Why is the sirloin MBS 7+ and not 9+ like the other cuts?"]];
+function buildQuestions(){
+  const map=new Map();
+  const add=(key,text,dish,label,src)=>{if(!map.has(key))map.set(key,{id:hash(key),text,label,dishes:[],src});const o=map.get(key);if(!o.dishes.includes(dish))o.dishes.push(dish)};
+  D.forEach(d=>Object.entries(d[5]).forEach(([k,v])=>{if(v.startsWith("A:")&&v.length>2){const n=v.slice(2).replace(/:\s*ask$/i,"").replace(/^⚠\s*/,"");add(k+"|"+n,n.charAt(0).toUpperCase()+n.slice(1),d[2],LBL[k],"notes")}}));
+  GENERAL.forEach(([dish,t])=>add("g|"+t,t,dish,"General","general"));
+  const seenQ=new Set();Object.entries(ADAPT).forEach(([pre,A])=>{const obj=A==="WAGYU"?WAGYU:A;const d=D.find(x=>x[2].toLowerCase().startsWith(pre));
+    Object.values(obj).forEach(a=>{if(a.q&&!seenQ.has(a.q)){seenQ.add(a.q);add("a|"+a.q,a.q,A==="WAGYU"?"Wagyu (all cuts)":d[2],"How to adapt","adapt")}})});
+  custom.forEach(c=>add("c|"+c.dish+"|"+c.text,c.text,c.dish,c.label,"added"));
+  return [...map.values()];
+}
+
+/* ---------- where / why / ask ---------- */
+function findings(d,key){
+  const fams=DIET_FAM[key];if(!fams)return [];
+  const re=famRe(fams),out=[],seen=new Set();
+  d[4].split(" · ").forEach(seg=>{re.lastIndex=0;const m=seg.match(re);if(!m)return;
+    const term=m[0];if(seen.has(term.toLowerCase()))return;seen.add(term.toLowerCase());
+    re.lastIndex=0;out.push({seg,term,html:hl(seg,re),why:roleOf(term)||roleOf(seg)})});
+  return out.slice(0,3);
+}
+/* ---------- how each "Can adapt" works ----------
+ t: type · how: what the kitchen does · get: what the guest receives · dk: what to write on the docket
+ why: why it can be adapted · q: what the notes don't say (goes to the Chef list) */
+const AT={rm:["✂","REMOVE"],side:["⇢","ON THE SIDE"],swap:["⇄","SWAP"],ver:["◐","OTHER VERSION"],cook:["♨","COOK DIFFERENTLY"],mod:["☎","MOD DECIDES"]};
+const UNK="The notes say it can be done, not how.";
+const ADAPT={
+ "freshly shucked oyster":{onion:{t:"rm",how:"Served natural: the whole mignonette comes off.",get:"The plain freshly shucked oyster on ice, nothing on top.",dk:"OYSTER NATURAL",why:"Shallot and chili kosho are both inside the mignonette, so the dressing goes as a whole."},
+   chilli:{t:"rm",how:"Served natural: the whole mignonette comes off.",get:"The plain freshly shucked oyster on ice, nothing on top.",dk:"OYSTER NATURAL",why:"The chili kosho is mixed into the mignonette, so the dressing goes as a whole."}},
+ "big eye tuna":{df:{t:"rm",how:"The bonito cream is left off.",get:"Tuna, apple ponzu, compressed apple and crispy seaweed. The smoky bonito flavour stays, because it's also in the ponzu.",dk:"NO BONITO CREAM",why:"The milk is only in the bonito cream, a separate element on the plate."},
+   chilli:{t:"rm",how:"No chilli oil when the tuna is seasoned.",get:"Same tartare, softer and less red.",dk:"NO CHILLI OIL",why:"The chilli oil is a seasoning stirred into the tuna to order, so it can be skipped."}},
+ "grilled edamame":{sesame:{t:"ver",how:"Sea Salt Edamame: same recipe, sea salt instead of shichimi.",get:"Grilled edamame with spring onion oil and sea salt.",dk:"SEA SALT EDAMAME",why:"The sesame is only in the shichimi sprinkled on top."},
+   chilli:{t:"ver",how:"Sea Salt Edamame: same recipe, sea salt instead of shichimi.",get:"Grilled edamame with spring onion oil and sea salt.",dk:"SEA SALT EDAMAME",why:"The heat is only in the shichimi sprinkled on top."}},
+ "japanese sweet potato":{gf:{t:"swap",how:"The beer batter (wheat) is replaced with a gluten-free coating.",get:"Same crisp sweet potato cake.",dk:"SWEET POTATO CAKE GF",why:"The gluten is in the batter, not in the potato.",q:"Sweet potato cake GF: what batter replaces the beer batter? Same fryer as the wheat items?"},
+   onion:{t:"swap",how:"Made without onion and garlic. "+UNK,get:"Sweet potato cake, probably with a different sauce.",dk:"SWEET POTATO CAKE NO ONION/GARLIC",why:"Onion and garlic are most likely in the smoked tomato emulsion, a separate sauce.",q:"Sweet potato cake without onion/garlic: is the smoked tomato emulsion changed, or left off?"},
+   halal:{t:"swap",how:"The beer batter is replaced with a batter without alcohol.",get:"Same crisp sweet potato cake.",dk:"SWEET POTATO CAKE HALAL (NO BEER)",why:"The only alcohol is the beer in the batter.",q:"Sweet potato cake GF: what batter replaces the beer batter? Same fryer as the wheat items?"}},
+ "prawn toast":{chilli:{t:"side",how:"The chili amazu is served on the side instead of poured over.",get:"Plain crisp prawn toast; the guest decides how much sauce, or none.",dk:"AMAZU ON THE SIDE",why:"The prawn filling has no chilli: the heat is only in the dressing."}},
+ "wagyu beef tataki":{egg:{t:"rm",how:"The smoked egg yolk emulsion is left off.",get:"Seared wagyu with brown butter ponzu and Davidson plum, without the creamy yolk sauce.",dk:"TATAKI NO EGG",why:"The egg is only in the emulsion dotted on top."},
+   halal:{t:"swap",how:"Sauces made without sake and mirin.",get:"Same dish, the sauces just lose the rice wine.",dk:"TATAKI HALAL – NO SAKE/MIRIN",why:"The alcohol is in the ponzu and in the plum purée, both made in house.",q:"Tataki halal: are both the ponzu and the plum purée made without sake and mirin? Is the wagyu halal certified?"}},
+ "vegan tempeh":{onion:{t:"swap",how:"The roasted shallot dressing is swapped for a different sauce.",get:"Same tempeh skewer and pickled fennel, with another sauce.",dk:"TEMPEH NO ONION/GARLIC",why:"Onion, garlic and shallot are all in the dressing, not in the tempeh.",q:"Tempeh skewer: what's the sauce without onion/garlic? Does it still have chilli?"}},
+ "xo pipis":{df:{t:"swap",how:UNK+" The notes don't even say which part has dairy.",get:"Ask the kitchen.",dk:"PIPIS DAIRY FREE",why:"Probably a side element (the kimchee mayo or the doughnut), since the XO itself is dairy free.",q:"XO pipis dairy free: which part has dairy, and what changes?"}},
+ "david blackmore karubi":{egg:{t:"rm",how:"The egg yolk on top is left off.",get:"Same karubi with sesame and spring onion, no yolk.",dk:"KARUBI NO YOLK",why:"The yolk is just placed on top at the pass."},
+   preg:{t:"rm",how:"The raw egg yolk on top is left off.",get:"Same karubi, no raw yolk.",dk:"KARUBI NO YOLK – PREGNANT",why:"A raw yolk is a risk in pregnancy (salmonella); the meat itself is slow roasted for 3 hours."}},
+ "wagyu bavette":"WAGYU","sher wagyu sirloin mbs":"WAGYU","sanchoku":"WAGYU",
+ "kung pao":{gf:{t:"swap",how:UNK,get:"Kung pao cauliflower made gluten free.",dk:"KUNG PAO GF",why:"The gluten is in the soy sauce of the coating; the batter is rice flour.",q:"Kung pao GF: what changes? GF soy instead of soy sauce?"},
+   nut:{t:"rm",how:"Made without cashews. "+UNK,get:"Kung pao cauliflower without the cashew sauce, or with a replacement.",dk:"KUNG PAO NO NUTS",why:"The cashews are in the cashew sauce, a separate element.",q:"Kung pao nut free: is the cashew sauce left off or replaced?"},
+   onion:{t:"swap",how:"Made without onion. "+UNK,get:"Kung pao cauliflower without onion.",dk:"KUNG PAO NO ONION",why:"Onion is in the coating and in the cashew sauce (brown onion).",q:"Kung pao without onion: what changes in the coating and in the cashew sauce?"},
+   chilli:{t:"rm",how:"Made without the chillies.",get:"Kung pao cauliflower, mild. Sichuan pepper may still tingle.",dk:"KUNG PAO NO CHILLI",why:"The chilli is tossed in to order with the sauce.",q:"Kung pao without chilli: does the Sichuan pepper stay?"}},
+ "kohlrabi":{chilli:{t:"rm",how:"No green chilli in the dressing.",get:"Same salad, fresh but not hot.",dk:"SALAD NO CHILLI",why:"The chilli is only in the dressing, not in the salad."}},
+ "stir fried broccolini":{shell:{t:"swap",how:"Wok-tossed without oyster sauce.",get:"Same broccolini, seasoned differently.",dk:"BROCCOLINI NO OYSTER SAUCE",why:"It's cooked to order in the wok, so the seasoning can change.",q:"Broccolini without seafood: what replaces the oyster sauce?"},
+   "*":{t:"swap",how:"Wok-tossed to order around the guest's needs.",get:"Broccolini with a seasoning that suits them.",dk:"BROCCOLINI – write the dietary",why:"The notes say it can be made to suit all dietaries, because it's cooked to order.",q:"Broccolini without seafood: what replaces the oyster sauce?"}},
+ "egg fried rice":{veg:{t:"ver",how:"Vegetarian version: no oyster sauce, no fish sauce.",get:"Egg fried rice with mushrooms, nori butter and crispy seaweed. Still has egg and butter.",dk:"EGG FRIED RICE VEGO",why:"The seafood is only in the two sauces added in the wok."}},
+ "osmanthus":{preg:{t:"swap",how:"An alcohol-free rice wine is poured at the table instead.",get:"Same mousse and pour, no alcohol.",dk:"OSMANTHUS – ALCOHOL FREE",why:"The rice wine is poured at the table, so it's easy to switch."}},
+ "hokkaido scallops":{gf:{t:"swap",how:"The spring roll tartlet is replaced by a rice cracker.",get:"Scallop, pistachio purée and yuzu gel on a rice cracker.",dk:"SCALLOP ON RICE CRACKER",why:"The gluten and the egg wash are only in the tartlet shell."}},
+ "cauliflower, golden":{gf:{t:"swap",how:"The lavosh is replaced by a rice cracker.",get:"Same cauliflower mix on a rice cracker.",dk:"CAULI ON RICE CRACKER",why:"The gluten is in the lavosh cracker.",q:"Cauliflower lavosh GF: the mix has soy sauce, is it GF soy?"}},
+ "jonella farms corn":{onion:{t:"rm",how:"Made without onion.",get:"Same corn chawanmushi and tostada.",dk:"CORN NO ONION",why:"The onion is most likely in the green mango salad on the tostada."}},
+ "coconut duck":{gf:{t:"ver",how:"Vegetarian spring roll in rice paper instead of the duck roll in brick pastry.",get:"Rice paper roll with cabbage, carrot, wood ear mushroom and soy, plus the tea.",dk:"VEG SPRING ROLL GF",why:"The gluten is in the brick pastry.",q:"Duck course GF: the angelica tea has dark soy and oyster sauce. Is the tea GF too?"},
+   shell:{t:"swap",how:"The whole course is replaced: no tea, no duck roll.",get:"Japanese sweet potato cake instead.",dk:"NO DUCK COURSE → SWEET POTATO CAKE",why:"The oyster sauce is in the tea, which is the base of the course, so it can't be taken out."}},
+ "sher wagyu sirloin, charred":{df:{t:"rm",how:"Finished without brown butter.",get:"Same sirloin and garnishes, no butter on the meat.",dk:"SIRLOIN NO BROWN BUTTER",why:"The brown butter is brushed on at the end, and the jus can be made without it."},
+   preg:{t:"cook",how:"Cooked well done.",get:"Firmer, less juicy meat. Tell the guest gently.",dk:"WELL DONE – PREGNANT",why:"Rare meat is a risk in pregnancy."}},
+ "dessert bento":{"*":{t:"mod",how:"The manager on duty advises the variation on the night.",get:"A bento with items that suit them.",dk:"BENTO – tell MOD the dietary",why:"Bento items change often, so the kitchen decides on the night."}}
+};
+const WAGYU={gf:{t:"swap",how:"The tarragon ponzu is replaced by a substitute dressing.",get:"Same steak and yuzu kosho, different dressing.",dk:"WAGYU – SUB PONZU (GF)",why:"The gluten (soy sauce) and the sesame oil are in the ponzu, poured on at the end.",q:"Wagyu substitute ponzu: what's in it? Is it soy free and garlic free too?"},
+ sesame:{t:"swap",how:"The tarragon ponzu is replaced by a substitute dressing.",get:"Same steak and yuzu kosho, different dressing.",dk:"WAGYU – SUB PONZU (NO SESAME)",why:"The sesame oil is in the ponzu, poured on at the end.",q:"Wagyu substitute ponzu: what's in it? Is it soy free and garlic free too?"},
+ chilli:{t:"side",how:"The yuzu kosho is already served on the side: leave it off.",get:"Same steak with ponzu.",dk:"NO YUZU KOSHO",why:"The chilli is only in the yuzu kosho."},
+ preg:{t:"cook",how:"Cooked well done (the chef recommends medium rare).",get:"Firmer, less juicy meat: the fat renders out. Tell the guest gently.",dk:"WELL DONE – PREGNANT",why:"Rare meat is a risk in pregnancy."}};
+const ALT={coeliac:"gf",garlic:"onion",buddhist:"onion",kosher:"shell",fish:"shell",pesc:"shell",egg:"gf"};
+function adaptFor(d,k){
+  const key=Object.keys(ADAPT).find(p=>d[2].toLowerCase().startsWith(p));if(!key)return null;
+  let A=ADAPT[key];if(A==="WAGYU")A=WAGYU;
+  return A[k]||A[ALT[k]]||(k==="veg"||k==="pesc"||k==="kosher"||k==="lacto"||k==="fish"||k==="shell"?A.veg:null)||A["*"]||null;
+}
+function adaptHTML(a){
+  const [ic,lab]=AT[a.t];
+  return `<div class="adapt"><div class="ah"><span class="atype">${ic} ${lab}</span><span>${esc(a.how)}</span></div>
+  <div class="where"><span class="k">Guest gets</span><div>${esc(a.get)}</div><span class="k">Why it works</span><div class="whyt">${esc(a.why)}</div><span class="k">Docket</span><div><code class="dk">${esc(a.dk)}</code></div></div>
+  ${a.q?`<div class="askq"><q>${esc(a.q)}</q><span class="qd">on the Chef list</span></div>`:""}</div>`;
+}
+function rowHTML(d,k,c,n){
+  let h=`<div class="dr"><div class="drh"><span class="pill s-${META[c].k}">${META[c].s} ${META[c].p}</span><b>${LBL[k]}</b></div>`;
+  if(n)h+=`<div class="drn">${esc(n)}</div>`;
+  if(c==="N"||c==="A"||c==="M"){
+    const f=findings(d,k);
+    f.forEach(x=>{h+=`<div class="where"><span class="k">Where</span><div>${x.html}</div>${x.why?`<span class="k">Why</span><div class="whyt">${esc(x.why)}</div>`:""}</div>`});
+    if(c==="M"){const a=adaptFor(d,k);if(a)h+=adaptHTML(a)}
+    if(c==="N"&&f.length){
+      f.forEach(x=>{const core=isCore(d,x.term,x.seg),v=ans[wkey(d,x.term)];
+        h+=`<div class="askq"><q>${core?`${esc(x.term)} is the main ingredient: it can't come off.`:v==="no"?`Chef: it can't be done without the ${esc(x.term)}.`:`Can it be done without the ${esc(x.term)}?`}</q>${core||v==="no"?"":`<span class="qd">on the Chef list</span>`}</div>`});
+    }
+    if(c==="M"&&n.startsWith("chef confirmed"))h+=`<div class="askq" style="background:var(--okBg)"><q>Chef confirmed: write “NO ${esc(n.replace("chef confirmed: can be done without ","").toUpperCase())}” on the docket.</q></div>`;
+    if(c==="A"&&d[5][k])h+=`<div class="askq"><q>Already on the Chef list</q></div>`;
+  }
+  return h+"</div>";
+}
+
+/* ---------- renders ---------- */
+function renderDiet(){
+  const out=document.getElementById("out");
+  if(!sel.size){out.innerHTML='<div class="empty">Tap one or more needs above (e.g. <b>Gluten free</b> + <b>Shellfish free</b>).<br>The dishes appear here, grouped by verdict.</div>';return}
+  const keys=[...sel],groups={O:[],P:[],M:[],A:[],N:[]};
+  dishList().forEach(d=>{const res=keys.map(k=>[k,...st(d,k)]);const w=res.reduce((a,r)=>RANK[r[1]]>RANK[a]?r[1]:a,"O");groups[w].push({d,res})});
+  let h=`<div class="combo">Checking ${keys.map(k=>"<b>"+esc(LBL[k])+"</b>").join(" + ")}${keys.length>1?"<span> · a dish must pass all of them</span>":""}</div>`;
+  h+='<div class="tiles">'+ORDER.map(s=>`<button type="button" class="tile s-${META[s].k}" data-g="${s}" ${groups[s].length?"":"disabled"}><i>${META[s].s}</i><b>${groups[s].length}</b><span>${META[s].t}</span></button>`).join("")+'</div><div class="tapnote">Tap a box to jump to that group</div>';
+  ORDER.forEach(s=>{
+    const g=groups[s];if(!g.length)return;
+    h+=`<details class="group" id="g-${s}" ${s==="O"||s==="P"?"open":""}><summary><span class="gsym s-${META[s].k}">${META[s].s}</span><span class="gt"><b>${META[s].t}</b><small>${META[s].d}</small></span><span class="gn">${g.length}</span><span class="chev">›</span></summary>`;
+    g.forEach(({d,res})=>{
+      const first=(s==="O"||s==="P")?null:res.find(r=>r[1]===s);
+      let why="";if(first&&s==="M"){const ms=res.filter(r=>r[1]==="M").map(r=>adaptFor(d,r[0])).filter(Boolean);if(ms.length)why=[...new Set(ms.map(a=>AT[a.t][0]+" "+a.dk))].map(esc).join(" · ")}
+      if(!why&&first){const f=findings(d,first[0])[0];why=f?`<b>${esc(f.term)}</b> in ${esc(f.seg.split(":")[0].slice(0,40))}`:esc(first[2]||"")}
+      h+=`<details class="dish"><summary><span class="dn"><b>${esc(d[2])}</b><br><span class="course">${d[1]}</span>${why?`<div class="why1">${why}</div>`:""}</span><span class="chev">›</span></summary><div class="body">`;
+      res.forEach(([k,c,n])=>h+=rowHTML(d,k,c,n));
+      h+=`<div class="dish-desc"><div><b>The dish:</b> ${esc(d[3])}</div><div><b>Components:</b> ${esc(d[4])}</div></div></div></details>`;
+    });
+    h+='</details>';
+  });
+  if(sel.has("shell")&&menu!=="alc")h+='<div class="warn" style="margin-top:10px"><b>Chef\'s Experience, shellfish free:</b> the kitchen has already swapped the angelica tea and the duck spring roll for the Japanese sweet potato cake.</div>';
+  out.innerHTML=h;
+}
+const QUICK=["garlic","onion","shellfish","fish","gluten","dairy","egg","sesame","soy","chilli","alcohol","coriander","pork","gelatine","nuts","mushroom"];
+const ALIAS={chili:"chilli",chillies:"chilli",chilies:"chilli",spicy:"chilli",nut:"nuts",prawns:"prawn",eggs:"egg",wine:"alcohol",
+ crustacean:"shellfish",mollusc:"shellfish",seafood:"shellfish",lactose:"dairy",milk:"dairy",wheat:"gluten",gelatin:"gelatine",meat:"meat"};
+const FAMWORDS={shellfish:"shellfish",fish:"fish",gluten:"gluten",dairy:"dairy",alcohol:"alcohol",chilli:"chilli",egg:"egg",nuts:"nuts",gelatine:"gelatine",meat:"meat",pork:"pork",soy:"soy",sesame:"sesame",beef:"beef",wagyu:"beef"};
+// relatives: if the typed word belongs to a family, the rest of that family is flagged as "related"
+const REL={
+ "onion family (alliums)":["spring onion","onion","shallot","chive","leek","garlic"],
+ "shellfish":["prawn","shrimp","crab","lobster","scallop","conpoy","oyster","pipi","clam","kani"],
+ "fish":["tuna","bonito","salmon","kingfish","snapper","grouper","trout","anchovy","caviar","unagi","\\beel\\b","itogaki","fish sauce"],
+ "soy":["edamame","tempeh","tofu","kecap","miso","soy sauce","dark soy","soy milk","ponzu"],
+ "dairy":["(?<!soy )milk","butter","(?<!coconut )cream","cheese","crème fraîche","white chocolate"],
+ "nuts":["cashew","pistachio","almond","peanut","walnut","hazelnut","macadamia"],
+ "egg":["\\begg(?!plant)","yolk","mayo","custard","meringue"],
+ "chilli":["chilli","chili","shichimi","kosho","sambal","jalapeño","guindilla","lao gan ma"],
+ "alcohol":["mirin","sake","shaoxing","rice wine","beer","brandy","whiskey"],
+ "wheat / gluten":["flour","soy sauce","doughnut","shokupan","\\bbao\\b","lavosh","pastry","beer"],
+ "citrus":["yuzu","lime","lemon","calamansi","orange","grapefruit","mandarin","finger lime"],
+ "beef":["beef","wagyu","karubi","bavette","sirloin","scotch fillet","gelatine"]
+};
+const plain=t=>t.replace(/\(\?<?!.*?\)/g,"").replace(/\\b/g,"");
+function termRe(raw){const key=ALIAS[raw]||raw,fam=FAMWORDS[key];
+  const out={re:fam?famRe([fam]):new RegExp("("+reEsc(raw)+")","gi"),fam,rel:null,relName:""};
+  if(!fam){for(const [name,list] of Object.entries(REL)){
+    if(list.some(t=>{const p=plain(t);return p===raw||p.includes(raw)||raw.includes(p)})){
+      out.relName=name;out.rel=new RegExp("("+list.slice().sort((a,b)=>plain(b).length-plain(a).length).join("|")+")","gi");break}}}
+  return out}
+// segments with a relative of the typed word but not the word itself
+function relDish(d,x){if(!x.rel)return [];const res=[];
+  d[4].split(" · ").forEach(seg=>{x.rel.lastIndex=0;const ms=seg.match(x.rel)||[];x.rel.lastIndex=0;
+    const others=[...new Set(ms.map(m=>m.toLowerCase()).filter(m=>!m.includes(x.t)&&!x.t.includes(m)))];
+    x.re.lastIndex=0;const exact=x.re.test(seg);x.re.lastIndex=0;
+    if(others.length&&!exact)res.push({seg,terms:others})});
+  return res}
+function relHTML(list,x){return list.slice(0,2).map(r=>{const re=new RegExp("("+r.terms.map(reEsc).join("|")+")","gi");return `<div class="where" style="margin-top:4px"><span class="k" style="color:var(--mod)">Related</span><div>${hl(r.seg,re)}</div><span class="k" style="color:var(--mod)">Note</span><div class="whyt">${esc(r.terms.join(", "))}: same ${esc(x.relName)} as ${esc(x.t)}. ${esc(roleOf(r.terms[0]))}</div></div>`}).join("")}
+function matchDish(d,re){const found=d[4].split(" · ").filter(p=>{re.lastIndex=0;return re.test(p)});re.lastIndex=0;const inName=re.test(d[2]);re.lastIndex=0;return found.length||inName?found:null}
+function whereHTML(found,re){return found.slice(0,2).map(p=>{re.lastIndex=0;const m=p.match(re);re.lastIndex=0;const w=m?roleOf(m[0]):"";return `<div class="where" style="margin-top:4px"><span class="k">Where</span><div>${hl(p,re)}</div>${w?`<span class="k">Why</span><div class="whyt">${esc(w)}</div>`:""}</div>`}).join("")}
+function renderIng(){
+  const out=document.getElementById("out2");
+  const pend=q.trim().toLowerCase();
+  const terms=[...tags];if(pend.length>=2&&!terms.includes(pend))terms.push(pend);
+  document.getElementById("tags").innerHTML=terms.map(t=>tags.includes(t)?`<button type="button" class="tag" data-x="${esc(t)}">${esc(t)}<span>×</span></button>`:`<span class="tag pending">${esc(t)} · tap Add</span>`).join("");
+  document.querySelectorAll("#imode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.i===imode));
+  if(!terms.length){out.innerHTML='<div class="empty">Add an ingredient (e.g. <b>coriander</b>), then another one (e.g. <b>beef</b>).<br>You can add as many as the guest needs.</div>';return}
+  const T=terms.map(t=>({t,...termRe(t)}));
+  let h="";
+  T.filter(x=>x.rel).forEach(x=>{h+=`<div class="hint" style="margin-bottom:6px">“${esc(x.t)}” belongs to the <b>${esc(x.relName)}</b>. Relatives are flagged in yellow.</div>`});
+  T.filter(x=>x.fam).forEach(x=>{h+=`<div class="hint" style="margin-bottom:6px">“${esc(x.t)}” is a family: ${F[x.fam].map(t=>esc(t.replace(/\(\?<?!.*?\)/g,"").replace(/\\b|s\?/g,""))).join(", ")}.</div>`});
+  const rows=dishList().map(d=>({d,m:T.map(x=>({...x,found:matchDish(d,x.re)}))}));
+  const course=d=>`<br><span class="course">${d[1]}</span>`;
+  const desc=d=>`<div class="body"><div class="dish-desc" style="margin-top:10px"><div><b>The dish:</b> ${esc(d[3])}</div><div><b>All components:</b> ${esc(d[4])}</div></div></div>`;
+  if(imode==="avoid"){
+    rows.forEach(r=>r.rel=r.m.map(x=>({x,list:x.found?[]:relDish(r.d,x)})).filter(y=>y.list.length));
+    const bad=rows.filter(r=>r.m.some(x=>x.found)),relOnly=rows.filter(r=>!r.m.some(x=>x.found)&&r.rel.length),free=rows.filter(r=>!r.m.some(x=>x.found)&&!r.rel.length);
+    h+=`<div class="tiles" style="grid-template-columns:repeat(3,1fr)"><button type="button" class="tile s-prob" data-g="free" ${free.length?"":"disabled"}><i>✓</i><b>${free.length}</b><span>None listed</span></button><button type="button" class="tile s-mod" data-g="rel" ${relOnly.length?"":"disabled"}><i>!</i><b>${relOnly.length}</b><span>Same family</span></button><button type="button" class="tile s-no" data-g="bad" ${bad.length?"":"disabled"}><i>✕</i><b>${bad.length}</b><span>Contains it</span></button></div><div class="tapnote">Tap a box to jump to that group</div>`;
+    if(free.length){h+=`<details class="group" id="g-free" open style="margin-top:10px"><summary><span class="gsym s-prob">✓</span><span class="gt"><b>None listed</b><small>Not in the components, nor anything from the same family. Some sauces aren't fully described: for an allergy, ask.</small></span><span class="gn">${free.length}</span><span class="chev">›</span></summary>`;
+      free.forEach(({d})=>{h+=`<details class="dish"><summary><span class="dn"><b>${esc(d[2])}</b>${course(d)}</span><span class="chev">›</span></summary>${desc(d)}</details>`});h+='</details>'}
+    if(relOnly.length){h+=`<details class="group" id="g-rel" open style="margin-top:10px"><summary><span class="gsym s-mod">!</span><span class="gt"><b>Same family: check with the guest</b><small>Not the exact ingredient, but a relative (e.g. shallot for onion). Many guests who avoid one avoid the whole family.</small></span><span class="gn">${relOnly.length}</span><span class="chev">›</span></summary>`;
+      relOnly.forEach(({d,rel})=>{h+=`<details class="dish"><summary><span class="dn"><b>${esc(d[2])}</b>${course(d)}<div>${rel.map(y=>y.list.flatMap(l=>l.terms)).flat().filter((v,i,a)=>a.indexOf(v)===i).map(t=>`<span class="found" style="background:var(--modBg);color:var(--mod)">${esc(t)}</span>`).join("")}</div>${rel.map(y=>relHTML(y.list,y.x)).join("")}</span><span class="chev">›</span></summary>${desc(d)}</details>`});h+='</details>'}
+    if(bad.length){h+=`<details class="group" id="g-bad" open style="margin-top:10px"><summary><span class="gsym s-no">✕</span><span class="gt"><b>Contains it</b><small>Where it is and why it's there</small></span><span class="gn">${bad.length}</span><span class="chev">›</span></summary>`;
+      bad.forEach(({d,m,rel})=>{const hit=m.filter(x=>x.found);
+        h+=`<details class="dish"><summary><span class="dn"><b>${esc(d[2])}</b>${course(d)}<div>${hit.map(x=>`<span class="found">${esc(x.t)}</span>`).join("")}${rel.map(y=>`<span class="found" style="background:var(--modBg);color:var(--mod)">+ ${esc(y.list.flatMap(l=>l.terms).join(", "))}</span>`).join("")}</div>${hit.map(x=>whereHTML(x.found,x.re)).join("")}${rel.map(y=>relHTML(y.list,y.x)).join("")}</span><span class="chev">›</span></summary>${desc(d)}</details>`});h+='</details>'}
+  }else{
+    const all=rows.filter(r=>r.m.every(x=>x.found));
+    h+=`<div class="tiles" style="grid-template-columns:1fr"><div class="tile s-no" style="cursor:default"><b>${all.length}</b><span>dishes have ${terms.length>1?"all of them":"it"}</span></div></div>`;
+    if(!all.length){h+=`<div class="empty" style="margin-top:10px">No dish lists ${terms.map(t=>"“"+esc(t)+"”").join(" and ")} together.</div>`}
+    else{h+=`<details class="group" open style="margin-top:10px"><summary><span class="gt"><b>Dishes with ${terms.map(esc).join(" + ")}</b></span><span class="gn">${all.length}</span><span class="chev">›</span></summary>`;
+      all.forEach(({d,m})=>{h+=`<details class="dish"><summary><span class="dn"><b>${esc(d[2])}</b>${course(d)}${m.map(x=>whereHTML(x.found,x.re)).join("")}</span><span class="chev">›</span></summary>${desc(d)}</details>`});h+='</details>'}
+  }
+  out.innerHTML=h;
+}
+/* ---------- the printed menu ---------- */
+const CAV="Printed menu: crispy rice, toasted shokupan, wasabi cream, grated salted egg yolk. Food Notes: crème fraîche and chives. The verdict follows the Food Notes.";
+const MENU=[
+ {sec:"Raw",m:"alc",items:[
+  ["Oyster","A","6.5 ea","yuzu kosho mignonette",["freshly shucked oyster"]],
+  ["Oyster & Oscietra Caviar","M","13.5 ea","yuzu kosho mignonette",["freshly shucked oyster","caviar service"],"New on the menu, not in the Food Notes. The verdict combines the oyster and the caviar."],
+  ["Big Eye Tuna Tartare","A","31","bonito, green apple ponzu & seaweed",["big eye tuna"]],
+  ["Seasonal Sashimi Platter","M","85","selection of seasonal fish with tuna, kingfish, salmon, Hokkaido scallop (20 pcs, served with house soy, wasabi)",["seasonal sashimi"]]]},
+ {sec:"Caviar",m:"alc",foot:"served with crispy rice, toasted shokupan, wasabi cream, grated salted egg yolk",items:[
+  ["Antonious Oscietra","I","165","30 g",["caviar service"],CAV],
+  ["N25 Oscietra Reserve","I","300","30 g",["caviar service"],"Not in the Food Notes: the verdict uses the Antonius caviar service. "+CAV],
+  ["N25 Kaluga Reserve","I","345","30 g",["caviar service"],"Not in the Food Notes: the verdict uses the Antonius caviar service. "+CAV]]},
+ {sec:"Small plates",m:"alc",items:[
+  ["Japanese Sweet Potato Cake","","7.5 ea","smoked tomato & curry leaf",["japanese sweet potato"]],
+  ["Grilled Edamame","","11","spring onion oil, shichimi",["grilled edamame"]],
+  ["Prawn Toast","I","26","Chinese doughnut, chilli amazu",["prawn toast"]],
+  ["Dressed Blue Swimmer Crab","A","38","pickled ginger, furikake, nashi pear",["dressed blue"]],
+  ["Wagyu Beef Tataki","","32","Davidson plum, brown butter ponzu, Sichuan",["wagyu beef tataki"],"The menu says “Sichuan”, the Food Notes don't mention it (Sichuan pepper?). On the Chef list."]]},
+ {sec:"Mains",m:"alc",items:[
+  ["QLD Giant Grouper","A","56","tomato, green mango & myoga ginger",["qld giant"]],
+  ["XO Pippies","A","44","Chinese doughnut, curry leaf & kimchee",["xo pipis"]],
+  ["Wood Grilled Pastured Chicken","","46","lemongrass & ginger sambal",["wood grilled"]],
+  ["David Blackmore Wagyu Karubi Yakiniku","","62","spring onion relish, bao bun",["david blackmore karubi"]]]},
+ {sec:"Wagyu",m:"alc",foot:"all served with yuzu kosho, tarragon ponzu",items:[
+  ["David Blackmore Wagyu Bavette 200g MBS 9+ (VIC)","","68","",["wagyu bavette"]],
+  ["Sher Wagyu Sirloin 250g MBS 7+ (VIC)","","98","",["sher wagyu sirloin mbs"]],
+  ["Sanchoku Wagyu Scotch Fillet 400g MBS 9+ (QLD)","","194","",["sanchoku"]]]},
+ {sec:"Fried rice",m:"alc",items:[
+  ["Southern Rock Lobster Fried Rice","I","46","miso, garlic chives, corn",["southern rock"]],
+  ["Yūgen Special Fried Rice","","25","XO, barbecue pork, prawn, spring onion",["yūgen special"]],
+  ["Egg Fried Rice","","22","Honest Eggs, spring onion, crispy seaweed",["egg fried rice"]]]},
+ {sec:"Sides",m:"alc",items:[
+  ["Kohlrabi & Fennel Salad","","22","green apple, celery, Thai basil",["kohlrabi"]],
+  ["Fried Eggplant","","22","bonito ponzu, itogaki",["fried eggplant"]],
+  ["Silken Tofu","","22","pickled chilli, sambal kecap & coriander",["silken tofu"]],
+  ["Stir Fried Broccolini","","22","ginger flower, chilli, mushroom & shaoxing",["stir fried broccolini"],"The menu lists mushroom and no oyster sauce; the Food Notes say oyster sauce and no mushroom. On the Chef list."]]},
+ {sec:"Vegan menu",m:"alc",note:"From the vegan & vegetarian menu (no prices on this page)",items:[
+  ["Jonella Farm Asparagus","","","den miso, nori & sesame",["jonella farm asparagus"]],
+  ["Vegan Tempeh Skewer","","","roasted shallot & pickled fennel",["vegan tempeh"]],
+  ["Kung Pao Cauliflower","","","cashew, puffed grains & curry leaf",["kung pao"]],
+  ["Vegan Mushroom Fried Rice","","","shiitake, crispy seaweed",["vegan mushroom"]]]},
+ {sec:"Desserts",m:"alc",items:[
+  ["Valrhona Dark Chocolate Mousse","","","Morello cherry cremeux, spiced fruit mince",["valrhona"]],
+  ["Coconut Namelaka","","","calamansi, fingerlime, palm seeds",["coconut namelaka"]],
+  ["Osmanthus Apricot Mousse","","","fermented rice wine, sable",["osmanthus"]],
+  ["Pandan Cheesecake Mochi","","","white peach, lychee, vanilla crumb",["pandan"]],
+  ["Strawberry Matcha Celebration Cake","","","off menu · preorder or order on the night",["strawberry matcha"]]]},
+ {sec:"Off menu",m:"alc",items:[["Steamed Rice","","","for fussy kids",["steamed rice"]]]},
+ {sec:"Chef's Experience",m:"chef",items:[
+  ["Hokkaido scallops","","","yuzu & pistachio",["hokkaido scallops"]],
+  ["Cauliflower lavosh","","","golden raisin & cashew",["cauliflower, golden"]],
+  ["Bluefin tuna","","","nori & Oscietra caviar",["bluefin tuna"]],
+  ["Kuih rose","","","sesame & kaffir lime",["kuih rose"]],
+  ["Jonella Farms corn","","","smoked rainbow trout & green mango",["jonella farms corn"]],
+  ["Seasonal Fish","","","ginger & tom kha",["seasonal fish"]],
+  ["Coconut duck spring roll","","","angelica & mushroom tea",["coconut duck"]],
+  ["Sher wagyu MBS 7+ sirloin","","","charred onion, tamarind & brown butter",["sher wagyu sirloin, charred"]],
+  ["Dessert Bento Box","","","jasmine macaron, yuzu meringue tart, mini magnum",["dessert bento"]]]}
+];
+const findD=pre=>D.find(d=>d[2].toLowerCase().startsWith(pre));
+MENU.forEach(sec=>sec.items.forEach(it=>{it.refs=it[4].map(findD)}));
+function evalItem(it,keys,T){
+  const res=keys.map(k=>{let b=null;it.refs.forEach(d=>{const r=st(d,k);if(!b||RANK[r[0]]>RANK[b[1]])b=[k,r[0],r[1],d]});return b});
+  const hits=[],rels=[];
+  T.forEach(x=>{let hit=null;it.refs.forEach(d=>{const f=matchDish(d,x.re);if(f&&!hit)hit={x,d,found:f}});
+    if(hit)hits.push(hit);else it.refs.forEach(d=>{const l=relDish(d,x);if(l.length)rels.push({x,d,list:l})})});
+  let w=res.reduce((a,r)=>RANK[r[1]]>RANK[a]?r[1]:a,"O");if(hits.length)w="N";
+  return {res,hits,rels,w};
+}
+const short=(t,n=46)=>t.length>n?t.slice(0,n-1)+"…":t;
+function renderMenu(){
+  const out=document.getElementById("out4"),keys=[...sel];
+  const T=tags.map(t=>({t,...termRe(t)}));
+  const active=keys.length||T.length;
+  const secs=MENU.filter(sc=>menu==="all"||sc.m===menu);
+  const cnt={ok:0,M:0,A:0,N:0};
+  let body="";
+  secs.forEach(sc=>{
+    let items="";
+    sc.items.forEach(it=>{
+      const e=evalItem(it,keys,T);
+      if(active){if(e.w==="O"||e.w==="P")cnt.ok++;else cnt[e.w]++}
+      if(active&&hideNo&&e.w==="N")return;
+      const tg=[];
+      if(active){
+        // ✕ contains: one short line per ingredient, details on tap
+        const noLines=new Map();
+        e.res.filter(r=>r[1]==="N").forEach(r=>{const f=findings(r[3],r[0]);
+          if(!f.length){noLines.set("n|"+r[0],{txt:LBL[r[0]]+": "+short(r[2],40),st:"",lab:new Set([LBL[r[0]]])});return}
+          f.forEach(x=>{const k=x.term.toLowerCase();if(!noLines.has(k))noLines.set(k,{txt:segLabel(x.seg,x.term),st:isCore(r[3],x.term,x.seg)?"core":(ans[wkey(r[3],x.term)]||"ask"),lab:new Set()});noLines.get(k).lab.add(LBL[r[0]])})});
+        e.hits.forEach(h=>{const seg=h.found[0]||"";const re=h.x.re;re.lastIndex=0;const m=seg.match(re);re.lastIndex=0;const term=m?m[0]:h.x.t;
+          const k=term.toLowerCase();if(!noLines.has(k))noLines.set(k,{txt:seg?segLabel(seg,term):term,st:isCore(h.d,term,seg)?"core":(ans[wkey(h.d,term)]||"ask"),lab:new Set()});noLines.get(k).lab.add("avoid "+h.x.t)});
+        noLines.forEach(l=>{const tail=l.st==="core"?`<i>main ingredient</i>`:l.st==="no"?`<i>chef: can't remove</i>`:l.st==="ask"?`<i class="q2">ask chef: without?</i>`:"";
+          tg.push(`<div class="cl no">✕ Contains ${esc(l.txt)} ${tail}</div>`)});
+        const VERB={rm:"can be done without",swap:"can be done without",side:"on the side",ver:"other version",cook:"cooked differently",mod:"MOD can vary it"};
+        const mads=new Map();
+        e.res.filter(r=>r[1]==="M").forEach(r=>{const a=adaptFor(r[3],r[0]);const f=findings(r[3],r[0]);
+          const chef=r[2].startsWith("chef confirmed");
+          const terms=f.length?f.map(x=>segLabel(x.seg,x.term)):[LBL[r[0]].toLowerCase()];
+          const key=a?a.how:r[2];if(!mads.has(key))mads.set(key,{a,chef,terms:new Set(),labs:new Set()});
+          const m=mads.get(key);terms.forEach(t=>m.terms.add(t));m.labs.add(LBL[r[0]])});
+        mads.forEach(m=>{const t=m.a?m.a.t:"rm";
+          const head=t==="cook"?`${[...m.labs].join(", ")}: cooked differently`:`Contains ${[...m.terms].join(" + ")}`;
+          tg.push(`<div class="cl mod">↺ ${esc(head)} <i>${m.chef?"chef: yes, without":VERB[t]}</i></div>`)});
+        const ask=e.res.filter(r=>r[1]==="A").map(r=>LBL[r[0]]);
+        if(ask.length)tg.push(`<span class="mt ask">? ask: ${esc(ask.join(", "))}</span>`);
+        const fam=[...new Set(e.rels.flatMap(r=>r.list.flatMap(l=>l.terms)))];
+        if(fam.length)tg.push(`<span class="mt fam">! same family: ${esc(fam.join(", "))}</span>`);
+      }
+      if(it[5])tg.push(`<span class="mt diff">≠ Food Notes</span>`);
+      const ok=active&&(e.w==="O"||e.w==="P")?'<span class="okdot">✓</span>':"";
+      let det="";
+      if(it[5])det+=`<div class="mnote"><b>Menu vs Food Notes:</b> ${esc(it[5])}</div>`;
+      e.res.forEach(([k,c,n,d])=>det+=rowHTML(d,k,c,n));
+      e.hits.forEach(h=>det+=`<div class="dr"><div class="drh"><span class="pill s-no">✕ NO</span><b>Avoid: ${esc(h.x.t)}</b></div>${whereHTML(h.found,h.x.re)}</div>`);
+      e.rels.forEach(r=>det+=`<div class="dr"><div class="drh"><span class="pill s-mod">! FAMILY</span><b>Avoid: ${esc(r.x.t)}</b></div>${relHTML(r.list,r.x)}</div>`);
+      it.refs.forEach(d=>det+=`<div class="dish-desc"><div><b>${esc(d[2])}:</b> ${esc(d[3])}</div><div><b>Components:</b> ${esc(d[4])}</div></div>`);
+      items+=`<details class="mi st-${active?e.w:"O"}"><summary><div class="mrow"><span class="mname">${ok}${esc(it[0])}${it[1]?` <span class="orig">(${it[1]})</span>`:""}</span>${it[2]?`<span class="mprice">${esc(it[2])}</span>`:""}</div>${it[3]?`<div class="mdesc">${esc(it[3])}</div>`:""}${tg.length?`<div class="mtags">${tg.join("")}</div>`:""}</summary><div class="body">${det}</div></details>`;
+    });
+    if(!items&&!sc.foot)return;
+    body+=`<section class="msec"><div class="mlabel">${esc(sc.sec)}</div><div class="mitems">${sc.note?`<div class="mnote" style="padding:0 0 4px">${esc(sc.note)}</div>`:""}${items||'<div class="mnote">Nothing here for this table.</div>'}${sc.foot?`<div class="mfoot">${esc(sc.foot)}</div>`:""}</div></section>`;
+  });
+  let top=`<div class="mtop">`;
+  if(active)top+=`<div class="mcount"><span class="s-ok">✓ ${cnt.ok}</span><span class="s-mod">↺ ${cnt.M}</span><span class="s-ask">? ${cnt.A}</span><span class="s-no">✕ ${cnt.N}</span></div><button type="button" class="toggle" id="hideNo" aria-pressed="${hideNo}">${hideNo?"Show":"Hide"} ✕ dishes</button>`;
+  else top+=`<div class="hint">Choose the table's needs above and the menu marks itself. Tap any dish to see what's in it.</div>`;
+  top+=`</div>`;
+  out.innerHTML=`<div class="menu-card">${top}${body}<div class="hint" style="padding-bottom:10px">↺ means the Food Notes say the kitchen can adapt it: always confirm with the chef when you send the order. (A) (I) (M) as printed on the menu: probably Australian, Imported, Mixed. ≠ Food Notes means the printed menu and the notes disagree; those questions are on the Chef list.</div></div>`;
+}
+function withoutList(){
+  const out=[];
+  D.forEach(d=>{const m=new Map();
+    ASK_DIETS.forEach(k=>{if(st0(d,k)[0]!=="N")return;findings(d,k).forEach(x=>{if(isCore(d,x.term,x.seg))return;const t=x.term.toLowerCase();
+      if(!m.has(t))m.set(t,{t,lab:segLabel(x.seg,x.term),why:x.why,diets:new Set()});m.get(t).diets.add(LBL[k])})});
+    if(m.size)out.push({d,items:[...m.values()]})});
+  return out;
+}
+function renderWithout(){
+  const W=withoutList();const tot=W.reduce((a,x)=>a+x.items.length,0);const done=W.reduce((a,x)=>a+x.items.filter(i=>ans[wkey(x.d,i.t)]).length,0);
+  let h=`<section class="block"><div class="bh"><h2>Can it be done without?</h2><span class="hint">${done} of ${tot}</span></div>
+  <div class="hint" style="margin-top:-6px">Ingredients that make a dish a “No”. Main ingredients are left out. Tap <b>Yes</b> if the chef can leave it out: the dish turns orange (↺) in the Menu and Dietary tabs.</div>`;
+  W.forEach(({d,items})=>{h+=`<div class="wdish"><div class="qd">${esc(d[2])}</div>`;
+    items.forEach(i=>{const v=ans[wkey(d,i.t)]||"";
+      h+=`<div class="witem"><div class="wt"><b>${esc(i.lab)}</b><small>${esc([...i.diets].join(" · "))}</small></div><div class="yn"><button type="button" class="ynb ${v==="yes"?"on-y":""}" data-w="${esc(wkey(d,i.t))}" data-v="yes">Yes</button><button type="button" class="ynb ${v==="no"?"on-n":""}" data-w="${esc(wkey(d,i.t))}" data-v="no">No</button></div></div>`});
+    h+=`</div>`});
+  return h+`</section>`;
+}
+function renderChef(){
+  const qs=buildQuestions(),out=document.getElementById("out3");
+  const answered=qs.filter(x=>(ans[x.id]||"").trim()).length;
+  document.getElementById("qprog").style.width=(qs.length?answered/qs.length*100:0)+"%";
+  document.getElementById("qprogtxt").textContent=answered+" of "+qs.length+" answered";
+  const sections=[["notes","From the Food Notes","Where the notes are unclear or contradict themselves"],["adapt","How to adapt","The notes say “can be done”, but not exactly how"],["added","Added by you","“Can it be done without…?” from a No"],["general","General","Things you wanted to understand"]];
+  let h="";
+  sections.forEach(([src,t,sub])=>{
+    const list=qs.filter(x=>x.src===src);if(!list.length)return;
+    h+=`<section class="block"><div class="bh"><h2>${t}</h2><span class="hint">${list.length}</span></div><div class="hint" style="margin-top:-6px">${sub}</div><div>`;
+    list.forEach((x,i)=>{const a=ans[x.id]||"";const done=a.trim().length>0;
+      h+=`<div class="q ${done?"done":""}"><div class="qh"><span class="qn">${i+1}</span><div class="qt"><span class="qd">${esc(x.dishes.join(" · "))}</span><br>${esc(x.text)}<small>${esc(x.label)}</small></div><span class="state ${done?"s-ok":"s-ask"}">${done?"✓ DONE":"OPEN"}</span></div>
+      <textarea id="a-${x.id}" data-id="${x.id}" rows="1" placeholder="Chef's answer…">${esc(a)}</textarea>${src==="added"?`<button type="button" class="rm" data-rm="${esc(x.text)}">Remove</button>`:""}</div>`});
+    h+='</div></section>';
+  });
+  out.innerHTML=renderWithout()+h;
+}
+function updCount(){const qs=buildQuestions();document.getElementById("qcount").textContent=qs.filter(x=>!(ans[x.id]||"").trim()).length}
+
+function render(){
+  save();updCount();
+  ALL.forEach(([k])=>document.getElementById("c-"+k).setAttribute("aria-pressed",sel.has(k)));
+  document.querySelectorAll("#seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===menu));
+  ["menu","diet","ing","chef"].forEach(t=>{document.getElementById("t-"+t).setAttribute("aria-selected",tab===t);document.getElementById("p-"+t).hidden=tab!==t});
+  document.getElementById("seg").hidden=tab==="chef";
+  document.getElementById("needs").hidden=!(tab==="diet"||tab==="menu");
+  document.getElementById("needcount").textContent=sel.size?sel.size+" selected":"";
+  const ar=document.getElementById("avoidRow");ar.hidden=tab!=="menu";
+  ar.innerHTML=tags.length?`Also avoiding: ${tags.map(t=>`<button type="button" class="tag" data-x="${esc(t)}" style="font-size:12.5px;padding:3px 6px 3px 10px">${esc(t)}<span>×</span></button>`).join(" ")} · add more in the <b>Ingredient</b> tab`:`To avoid a specific ingredient too (e.g. coriander), add it in the <b>Ingredient</b> tab.`;
+  tab==="menu"?renderMenu():tab==="diet"?renderDiet():tab==="ing"?renderIng():renderChef();
+}
+
+/* ---------- wiring ---------- */
+[[DIET,document.getElementById("chips")],[DIET2,document.getElementById("chips2")]].forEach(([list,el])=>list.forEach(([k,l])=>{const b=document.createElement("button");b.type="button";b.className="chip";b.id="c-"+k;b.textContent=l;b.onclick=()=>{sel.has(k)?sel.delete(k):sel.add(k);render()};el.appendChild(b)}));
+QUICK.forEach(w=>{const b=document.createElement("button");b.type="button";b.className="chip sm";b.textContent=w;b.onclick=()=>{if(!tags.includes(w))tags.push(w);render()};document.getElementById("quick").appendChild(b)});
+document.getElementById("reset").onclick=()=>{sel.clear();render()};
+document.querySelectorAll("#seg button").forEach(b=>b.onclick=()=>{menu=b.dataset.m;render()});
+["menu","diet","ing","chef"].forEach(t=>document.getElementById("t-"+t).onclick=()=>{tab=t;render();window.scrollTo({top:0})});
+document.getElementById("q").addEventListener("input",e=>{q=e.target.value;render()});
+document.getElementById("iform").addEventListener("submit",e=>{e.preventDefault();const v=q.trim().toLowerCase();if(v.length>=2&&!tags.includes(v))tags.push(v);q="";document.getElementById("q").value="";render();document.getElementById("q").focus()});
+document.getElementById("iclear").onclick=()=>{tags=[];q="";document.getElementById("q").value="";render()};
+document.querySelectorAll("#imode button").forEach(b=>b.onclick=()=>{imode=b.dataset.i;render()});
+document.addEventListener("click",e=>{
+  const tile=e.target.closest(".tile[data-g]");
+  if(tile){const g=document.getElementById("g-"+tile.dataset.g);if(g){g.open=true;g.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});g.classList.remove("flash");void g.offsetWidth;g.classList.add("flash")}return}
+  const add=e.target.closest(".add[data-t]");
+  if(add&&!add.disabled){custom.push({text:add.dataset.t,dish:add.dataset.d,label:add.dataset.l});save();updCount();add.disabled=true;add.textContent="✓ On the list";return}
+  const yn=e.target.closest(".ynb[data-w]");
+  if(yn){const k=yn.dataset.w;ans[k]=ans[k]===yn.dataset.v?"":yn.dataset.v;if(!ans[k])delete ans[k];const y=window.scrollY;render();window.scrollTo(0,y);return}
+  if(e.target.closest("#hideNo")){hideNo=!hideNo;render();return}
+  const tg=e.target.closest(".tag[data-x]");
+  if(tg){tags=tags.filter(t=>t!==tg.dataset.x);render();return}
+  const rm=e.target.closest(".rm[data-rm]");
+  if(rm){custom=custom.filter(c=>c.text!==rm.dataset.rm);render()}
+});
+document.addEventListener("input",e=>{const t=e.target;if(t.matches("textarea[data-id]")){ans[t.dataset.id]=t.value;save();updCount();
+  const qs=buildQuestions(),a=qs.filter(x=>(ans[x.id]||"").trim()).length;document.getElementById("qprog").style.width=(qs.length?a/qs.length*100:0)+"%";document.getElementById("qprogtxt").textContent=a+" of "+qs.length+" answered";
+  const box=t.closest(".q"),done=t.value.trim().length>0;box.classList.toggle("done",done);const s=box.querySelector(".state");s.className="state "+(done?"s-ok":"s-ask");s.textContent=done?"✓ DONE":"OPEN"}});
+document.getElementById("copy").onclick=async()=>{
+  const qs=buildQuestions();
+  const wl=withoutList().flatMap(x=>x.items.map(i=>`${x.d[2]} · without ${i.lab}? → ${ans[wkey(x.d,i.t)]||"(not asked yet)"}`));
+  const txt="YŪGEN DIETARIES · CHEF ANSWERS\n\nCAN IT BE DONE WITHOUT?\n"+wl.join("\n")+"\n\nQUESTIONS\n"+qs.map((x,i)=>`${i+1}. [${x.dishes.join(" / ")}] (${x.label}) ${x.text}\n   → ${(ans[x.id]||"").trim()||"(no answer yet)"}`).join("\n\n");
+  const msg=document.getElementById("copied");msg.hidden=false;
+  try{await navigator.clipboard.writeText(txt);msg.textContent="Copied. Paste it to Claude in the chat."}
+  catch(err){msg.innerHTML="Copy didn't work here. Select the text below and copy it:<textarea rows='8' style='margin-top:6px'>"+esc(txt)+"</textarea>"}
+};
+render();
+</script>
+
+</body>
+</html>
